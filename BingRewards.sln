@@ -7,8 +7,8 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "BingRewards", "BingRewards\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F4D23041-D62F-46E5-92DC-5E70C1757DE6}"
 	ProjectSection(SolutionItems) = preProject
-		create_config.py = create_config.py
 		readme.md = readme.md
+		setup.py = setup.py
 	EndProjectSection
 EndProject
 Global
