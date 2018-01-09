@@ -71,12 +71,14 @@ class Rewards:
 
 
     def __init__(self, path, email, password, debug=True, headless=True):
-        self.path = path
-        self.email = email
-        self.password = password
-        self.debug = debug
-        self.headless = headless
-        self.__completed = False
+        self.path               = path
+        self.email              = email
+        self.password           = password
+        self.debug              = debug
+        self.headless           = headless
+        self.__completed        = False
+        self.level              = -1
+
 
     def __get_sys_out_prefix(self, lvl, end):
         if not end:
@@ -108,6 +110,10 @@ class Rewards:
         #if email != base64.b64decode(self.email).decode():
         #    login(driver, self.email, self.password)
 
+        driver.get(self.__DASHBOARD_URL)
+        status = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, "status-level")))
+        self.level = int(re.findall(r'Level (\d)', status.text)[0])
+
         self.__sys_out("Successfully logged in", 2, True)
 
     def __get_progress(self, driver, platform):
@@ -121,7 +127,7 @@ class Rewards:
             web_progress_elements = [None, None]
             for element in progress_elements:
                 progress_name = element.find_element_by_xpath("./div[1]/div[1]").text
-                if progress_name == "PC search":
+                if progress_name == "PC search" or progress_name == "Daily search":
                     web_progress_elements[0] = element.find_element_by_xpath("./div[1]/div[3]")
                 elif progress_name == "Microsoft Edge bonus":
                     web_progress_elements[1] = element.find_element_by_xpath("./div[1]/div[3]")
@@ -204,12 +210,16 @@ class Rewards:
                 break
             except:
                 time.sleep(1)
-        start_quiz = driver.find_element_by_id("rqStartQuiz")
+        driver.switch_to_active_element()
+
+        start_quiz = driver.find_element_by_xpath('//*[@id="rqStartQuiz"]/div')
         if start_quiz.is_displayed():
-            start_quiz.click()
+            ActionChains(driver).move_to_element(start_quiz).click()
+
         else:
             self.__sys_out("Already started quiz", 4)
         quiz_options_len = 4
+
 
 
         ## drag and drop
@@ -275,7 +285,7 @@ class Rewards:
                             try:
                                 header = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="quizCompleteContainer"]/span/div[1]')))
                                 if header.text == "Way to go!":
-                                    self.__sys_out_progress(1, 1, 4)
+                                    self.__sys_out_progress(complete_progress, complete_progress, 4)
                                     exit_code = 0 # successfully completed
                                     break
                             except:
@@ -306,7 +316,7 @@ class Rewards:
                         try:
                             header = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="quizCompleteContainer"]/span/div[1]')))
                             if header.text == "Way to go!":
-                                self.__sys_out_progress(1, 1, 4)
+                                self.__sys_out_progress(complete_progress, complete_progress, 4)
                                 break
                         except:
                             pass
@@ -390,7 +400,10 @@ class Rewards:
             mobile_driver = Driver(self.path, Driver.MOBILE_PLATFORM, self.headless)
             self.__login(mobile_driver.driver)
     
-            self.__completed = self.__search(mobile_driver.driver, Driver.MOBILE_PLATFORM)
+            if self.level == 1:
+                self.completed = True
+            else:
+                self.__completed = self.__search(mobile_driver.driver, Driver.MOBILE_PLATFORM)
         except:
             mobile_driver.close()
             raise
