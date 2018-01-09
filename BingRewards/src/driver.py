@@ -66,7 +66,8 @@ class Rewards:
     __WEB_DRIVER_WAIT_LONG      = 15
     __WEB_DRIVER_WAIT_SHORT     = 5
 
-    __PROGRESS_BAR_SIZE         = 30
+    __SYS_OUT_TAB_LEN           = 8
+    __SYS_OUT_PROGRESS_BAR_LEN  = 30
 
 
     def __init__(self, path, email, password, debug=True, headless=True):
@@ -79,9 +80,9 @@ class Rewards:
 
     def __get_sys_out_prefix(self, lvl, end):
         if not end:
-            return "\t"*(lvl-1) + ">"*lvl + " "
+            return " "*(self.__SYS_OUT_TAB_LEN*(lvl-1)-(lvl-1)) + ">"*lvl + " "
         else:
-            return "\t"*(lvl-1) + " "*4 + "<"*lvl + " "
+            return " "*(self.__SYS_OUT_TAB_LEN*(lvl-1)-(lvl-1)) + " "*int(self.__SYS_OUT_TAB_LEN/2) + "<"*lvl + " "
     def __sys_out(self, msg, lvl, end=False, flush=False):
         if self.debug:
             if flush: # because of progress bar
@@ -90,8 +91,8 @@ class Rewards:
     def __sys_out_progress(self, current_progress, complete_progress, lvl):
         if self.debug:
             ratio = float(current_progress)/complete_progress
-            current_bars = int(ratio*self.__PROGRESS_BAR_SIZE)
-            needed_bars = self.__PROGRESS_BAR_SIZE-current_bars
+            current_bars = int(ratio*self.__SYS_OUT_PROGRESS_BAR_LEN)
+            needed_bars = self.__SYS_OUT_PROGRESS_BAR_LEN-current_bars
             sys.stdout.write("\r{0}Progress: [{1}] {2}/{3} ({4}%)".format(self.__get_sys_out_prefix(lvl, False), "#"*current_bars + " "*needed_bars, 
                                                                           current_progress, complete_progress, int(ratio*100)))
             sys.stdout.flush()
@@ -107,7 +108,7 @@ class Rewards:
         #if email != base64.b64decode(self.email).decode():
         #    login(driver, self.email, self.password)
 
-        self.__sys_out("Logged in", 2, True)
+        self.__sys_out("Successfully logged in", 2, True)
 
     def __get_progress(self, driver, platform):
         if len(driver.window_handles) == 1:
@@ -197,22 +198,32 @@ class Rewards:
 
 
         ## start quiz
+        while True:
+            try:
+                driver.find_element_by_id("btOverlay")
+                break
+            except:
+                time.sleep(1)
         start_quiz = driver.find_element_by_id("rqStartQuiz")
         if start_quiz.is_displayed():
             start_quiz.click()
         else:
             self.__sys_out("Already started quiz", 4)
-        
         quiz_options_len = 4
 
 
         ## drag and drop
+        is_drag_and_drop = False
         try:
             WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.ID, 'rqAnswerOptionNum0')))
+            is_drag_and_drop = True
             self.__sys_out("Drag and drop", 4)
+        except:
+            self.__sys_out("Multiple choice", 4)
 
+
+        if is_drag_and_drop:
             time.sleep(5) # let demo complete
-
 
             # get all possible combinations
             to_from_combos = []
@@ -232,7 +243,7 @@ class Rewards:
                 correct_options = []
                 option_index = 0
                 while option_index < quiz_options_len:
-                    option = WebDriverWait(driver, self,__WEB_DRIVER_WAIT_LONG).until(EC.element_to_be_clickable((By.ID, "rqAnswerOption{0}".format(option_index))))
+                    option = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, "rqAnswerOption{0}".format(option_index))))
                     if option.get_attribute("class") == "rqOption rqDragOption correctDragAnswer":
                         correct_options.append(option_index)
                     option_index += 1
@@ -244,35 +255,35 @@ class Rewards:
                     # update incorrect options
                     incorrect_options.append((from_option_index, to_option_index))
                     incorrect_options.append((to_option_index, from_option_index))
-                    print(len(incorrect_options)/2)
                     if len(incorrect_options)/2 == quiz_options_len:
                         self.__sys_out("Failed to complete quiz", 3, True, True)
                         return
             
 
-                exit_code = -1
+                exit_code = -1 # no choices were swapped
                 for combo in to_from_combos:
                     from_option_index, to_option_index = combo[0], combo[1]
                     # check if combination has already been tried
                     if combo not in incorrect_options and from_option_index not in correct_options and to_option_index not in correct_options:
                         # drag from option to to option
-                        from_option = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.element_to_be_clickable((By.ID, "rqAnswerOption{0}".format(from_option_index))))
-                        to_option = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.element_to_be_clickable((By.ID, "rqAnswerOption{0}".format(to_option_index))))
+                        from_option = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, "rqAnswerOption{0}".format(from_option_index))))
+                        to_option = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, "rqAnswerOption{0}".format(to_option_index))))
                         ActionChains(driver).drag_and_drop(from_option, to_option).perform()
+                        time.sleep(2)
 
                         if current_progress == complete_progress-1: # last question
                             try:
                                 header = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="quizCompleteContainer"]/span/div[1]')))
                                 if header.text == "Way to go!":
                                     self.__sys_out_progress(1, 1, 4)
-                                    exit_code = 0
+                                    exit_code = 0 # successfully completed
                                     break
                             except:
                                 pass
-                        exit_code = 1
+                        exit_code = 1 # successfully swapped 2 choices (can still be wrong)
                         break
                 
-                if exit_code == -1:
+                if exit_code == -1: 
                     self.__sys_out("Failed to complete quiz", 3, True, True)
                     return
                 elif exit_code == 0:
@@ -281,9 +292,7 @@ class Rewards:
 
 
         ## multiple choice
-        except:
-            self.__sys_out("Multiple choice", 4)
-
+        else:
             option_index = 0
             try_count = 0
             while True:
@@ -310,7 +319,7 @@ class Rewards:
                         return
 
 
-        self.__sys_out("Completed quiz", 3, True, True)
+        self.__sys_out("Successfully completed quiz", 3, True, True)
     def __handle_alerts(self, driver):
         try:
             driver.switch_to.alert.dismiss()
@@ -340,7 +349,7 @@ class Rewards:
                 self.__quiz(driver)
 
             driver.switch_to.window(driver.window_handles[0])
-            self.__sys_out("Completed {0}".format(title), 2, True)
+            self.__sys_out("Successfully completed {0}".format(title), 2, True)
 
             driver.get(self.__DASHBOARD_URL) # for stale element exception
         return driver.find_elements_by_xpath('//*[@id="dashboard"]/div[1]/div[1]/*')
@@ -351,8 +360,8 @@ class Rewards:
         offers = self.__click_offer(driver, offer, './div[3]/div/div/div/div[1]/div[1]', './div[3]/div/div/div/div[2]/span/span[2]')
 
         ## loop through rest of offers
-        for index in reversed(range(len(offers))):
-            offer = offers[index]
+        for index in range(len(offers)):
+            offer = offers[-index]
             offers = self.__click_offer(driver, offer, './div/div/div[1]/div[1]', './div/div/div[2]/span/span[2]')
 
         return True
@@ -369,7 +378,7 @@ class Rewards:
             web_driver.close()
             raise
 
-        self.__sys_out("Completed web search", 1, True)
+        self.__sys_out("Successfully completed web search", 1, True)
         if close:
             web_driver.close()
         else:
@@ -386,7 +395,7 @@ class Rewards:
             mobile_driver.close()
             raise
 
-        self.__sys_out("Completed mobile search", 1, True)
+        self.__sys_out("Successfully completed mobile search", 1, True)
         if close:
             mobile_driver.close()
         else:
@@ -405,7 +414,7 @@ class Rewards:
             driver.close()
             raise
 
-        self.__sys_out("Completed offers", 1, True)
+        self.__sys_out("Successfully completed offers", 1, True)
 
     def complete_mobile_search(self): 
         self.__complete_mobile_search()

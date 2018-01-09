@@ -39,7 +39,7 @@ class HistLog:
             return []
         else:
             with open(self.path, "r") as log:
-                return log.readlines()
+                return [line.strip("\n") for line in log.readlines()]
 
     def get_timestamp(self):
         return self.run_datetime.strftime(self.__DATETIME_FORMAT)
@@ -57,7 +57,7 @@ class HistLog:
                 if completed == self.__COMPLETED_TRUE:
                     ran = True
                 else:
-                    self.hist = self.hist[1:]
+                    self.hist.pop()
     
         if not ran:
             # update hist with todays time stamp
@@ -68,10 +68,9 @@ class HistLog:
         else:
             return False
     def write(self, completed):
-        self.hist[-1] += ": {}".format(self.__COMPLETED_TRUE if completed else self.__COMPLETED_FALSE)
+        self.hist[-1] = "{}: {}".format(self.hist[-1], self.__COMPLETED_TRUE if completed else self.__COMPLETED_FALSE)
         with open(self.path, "w") as log:
-            for line in self.hist:
-                log.write(line)
+            log.write("\n".join(self.hist) + "\n")
 
 
 def change_to_top_dir(arg0):
