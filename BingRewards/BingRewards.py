@@ -8,7 +8,8 @@ from logging import basicConfig, DEBUG, debug, exception
 import time
 
 
-DRIVER_PATH             = "drivers/chromedriver"
+DRIVERS_DIR             = "drivers"
+DRIVER                  = "chromedriver"
 
 LOG_DIR                 = "logs"
 ERROR_LOG               = "error.log"
@@ -98,7 +99,7 @@ if __name__ == "__main__":
         change_to_top_dir(sys.argv[0])
         
         if not os.path.exists(LOG_DIR):
-            os.makedirs(LOG_DIR)
+            os.mkdir(LOG_DIR)
         hist_log = HistLog(os.path.join(LOG_DIR, HIST_LOG))
 
         # get credentials
@@ -109,7 +110,10 @@ if __name__ == "__main__":
             exception(hist_log.get_timestamp())
             debug("")
             quit()
-        rewards = Rewards(DRIVER_PATH, config.credentials["email"], config.credentials["password"], DEBUG, HEADLESS)
+
+        if not os.path.exists(DRIVERS_DIR):
+            os.mkdir(DRIVERS_DIR)
+        rewards = Rewards(os.path.join(DRIVERS_DIR, DRIVER), config.credentials["email"], config.credentials["password"], DEBUG, HEADLESS)
 
 
         if hist_log.not_run_today():
@@ -145,7 +149,10 @@ if __name__ == "__main__":
             print("\n{}".format("Failed to import configuration file"))
             time.sleep(2)
             raise
-        rewards = Rewards(DRIVER_PATH, config.credentials["email"], config.credentials["password"], DEBUG, HEADLESS)
+        
+        if not os.path.exists(DRIVERS_DIR):
+            os.mkdir(DRIVERS_DIR)
+        rewards = Rewards(os.path.join(DRIVERS_DIR, DRIVER), config.credentials["email"], config.credentials["password"], DEBUG, HEADLESS)
     
 
         arg = arg.lower()

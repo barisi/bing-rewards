@@ -1,3 +1,11 @@
+import os
+import platform
+try:
+    from urllib.request import urlopen
+except ImportError: # python 2
+    from urllib2 import urlopen
+import ssl
+import zipfile
 from selenium import webdriver
 #from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.keys import Keys
@@ -14,18 +22,53 @@ import random
 
 
 class Driver:
-    WEB_PLATFORM                = 0
-    MOBILE_PLATFORM             = 1
+    WEB_DEVICE                  = 0
+    MOBILE_DEVICE               = 1
 
     # Microsoft Edge user agents for additional points
     __WEB_USER_AGENT            = "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.10240"
     __MOBILE_USER_AGENT         = "Mozilla/5.0 (Linux; Android 8.0; Pixel XL Build/OPP3.170518.006) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.0 Mobile Safari/537.36 EdgA/41.1.35.1"
 
+    __WINDOWS_DRIVER_URL        = "https://chromedriver.storage.googleapis.com/2.34/chromedriver_win32.zip"
+    __MAC_DRIVER_URL            = "https://chromedriver.storage.googleapis.com/2.34/chromedriver_mac64.zip"
 
-    def __init__(self, path, platform, headless):
-        self.driver = self.__get_chrome_driver(path, platform, headless)
 
-    def __get_chrome_driver(self, path, platform, headless):
+    def __init__(self, path, device, headless):
+        self.driver = self.__get_driver(path, device, headless)
+
+    def __download_driver(self, path, system):
+        if system == "Windows":
+            url = self.__WINDOWS_DRIVER_URL
+        elif system == "Darwin":
+            url = self.__MAC_DRIVER_URL
+
+        response = urlopen(url, context=ssl.SSLContext(ssl.PROTOCOL_TLSv1)) # context args for mac
+        zip_file_path = os.path.join(os.path.dirname(path), os.path.basename(url))
+        with open(zip_file_path, 'wb') as zip_file:
+            while True:
+                chunk = response.read(1024)
+                if not chunk:
+                    break
+                zip_file.write(chunk)
+
+        extracted_dir = os.path.splitext(zip_file_path)[0]
+        with zipfile.ZipFile(zip_file_path, "r") as zip_file:
+            zip_file.extractall(extracted_dir)
+        os.remove(zip_file_path)
+
+        driver = os.listdir(extracted_dir)[0]
+        os.rename(os.path.join(extracted_dir, driver), path)
+        os.rmdir(extracted_dir)
+
+        os.chmod(path, 0o755)
+    def __get_driver(self, path, device, headless):
+        system = platform.system()
+        if system == "Windows":
+            if not path.endswith(".exe"):
+                path += ".exe"
+        if not os.path.exists(path):
+            self.__download_driver(path, system)
+
         options = webdriver.ChromeOptions()
         options.add_argument("--disable-extensions")
         options.add_argument("--window-size=1280,1024")
@@ -33,7 +76,7 @@ class Driver:
         if headless:
             options.add_argument("--headless")
         
-        if platform == self.WEB_PLATFORM:
+        if device == self.WEB_DEVICE:
             options.add_argument("user-agent=" + self.__WEB_USER_AGENT)
         else:
             options.add_argument("user-agent=" + self.__MOBILE_USER_AGENT)
@@ -42,15 +85,6 @@ class Driver:
         #if not headless:
         #    driver.set_window_position(-2000, 0)
         return driver
-    def __get_phantomjs_driver(self, path, platform):
-        dcap = DesiredCapabilities.PHANTOMJS.copy()
-        if platform == self.WEB_PLATFORM:
-            dcap["phantomjs.page.settings.userAgent"] = self.__WEB_USER_AGENT
-        else:
-            dcap["phantomjs.page.settings.userAgent"] = self.__MOBILE_USER_AGENT
-        driver = webdriver.PhantomJS(path, desired_capabilities=dcap, service_args=['--ignore-ssl-errors=true'])
-        driver.set_window_size(1280, 1024)
-        return driver # deprecated 
 
     def close(self):
         # close open tabs
@@ -77,7 +111,7 @@ class Rewards:
         self.debug              = debug
         self.headless           = headless
         self.__completed        = False
-        self.level              = -1
+        #self.__level            = -1
 
 
     def __get_sys_out_prefix(self, lvl, end):
@@ -110,20 +144,20 @@ class Rewards:
         #if email != base64.b64decode(self.email).decode():
         #    login(driver, self.email, self.password)
 
-        driver.get(self.__DASHBOARD_URL)
-        status = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, "status-level")))
-        self.level = int(re.findall(r'Level (\d)', status.text)[0])
+        #driver.get(self.__DASHBOARD_URL)
+        #status = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, "status-level")))
+        #self.__level = int(re.findall(r'Level (\d)', status.text)[0])
 
         self.__sys_out("Successfully logged in", 2, True)
 
-    def __get_progress(self, driver, platform):
+    def __get_search_progress(self, driver, device):
         if len(driver.window_handles) == 1:
             driver.execute_script('''window.open("{0}");'''.format(self.__DASHBOARD_URL))
         driver.switch_to.window(driver.window_handles[-1])
         driver.get(self.__DASHBOARD_URL)
 
         progress_elements = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_all_elements_located((By.XPATH, '//*[@id="dashboard"]/div[2]/aside/div[3]/div[*]')))
-        if platform == Driver.WEB_PLATFORM:
+        if device == Driver.WEB_DEVICE:
             web_progress_elements = [None, None]
             for element in progress_elements:
                 progress_name = element.find_element_by_xpath("./div[1]/div[1]").text
@@ -147,7 +181,7 @@ class Rewards:
             mobile_progress_element = None
             for element in progress_elements:
                 progress_name = element.find_element_by_xpath("./div[1]/div[1]").text
-                if progress_name == "Mobile search":
+                if progress_name == "Mobile search" or progress_name == "Daily search":
                     mobile_progress_element = element.find_element_by_xpath("./div[1]/div[3]")
 
             if mobile_progress_element:
@@ -158,14 +192,14 @@ class Rewards:
         driver.switch_to.window(driver.window_handles[0])
         #driver.get(self.__BING_URL)
         return current_progress, complete_progress
-    def __search(self, driver, platform):
+    def __search(self, driver, device):
         self.__sys_out("Started searching", 2)
         driver.get(self.__BING_URL)    
 
         prev_progress = -1
         try_count = 0
         while True:
-            current_progress, complete_progress = self.__get_progress(driver, platform)
+            current_progress, complete_progress = self.__get_search_progress(driver, device)
             if complete_progress > 0:
                 self.__sys_out_progress(current_progress, complete_progress, 3)
             if current_progress == complete_progress:
@@ -380,15 +414,18 @@ class Rewards:
         self.__sys_out("Started web search", 1)
 
         try:
-            web_driver = Driver(self.path, Driver.WEB_PLATFORM, self.headless)
+            web_driver = Driver(self.path, Driver.WEB_DEVICE, self.headless)
             self.__login(web_driver.driver)
         
-            self.__completed = self.__search(web_driver.driver, Driver.WEB_PLATFORM)
+            self.__completed = self.__search(web_driver.driver, Driver.WEB_DEVICE)
+            if self.__completed:
+                self.__sys_out("Successfully completed web search", 1, True)
+            else:
+                self.__sys_out("Failed to complete web search", 1, True)
         except:
             web_driver.close()
             raise
 
-        self.__sys_out("Successfully completed web search", 1, True)
         if close:
             web_driver.close()
         else:
@@ -397,18 +434,18 @@ class Rewards:
         self.__sys_out("Started mobile search", 1)
 
         try:
-            mobile_driver = Driver(self.path, Driver.MOBILE_PLATFORM, self.headless)
+            mobile_driver = Driver(self.path, Driver.MOBILE_DEVICE, self.headless)
             self.__login(mobile_driver.driver)
     
-            if self.level == 1:
-                self.completed = True
+            self.__completed = self.__search(mobile_driver.driver, Driver.MOBILE_DEVICE)
+            if self.__completed:
+                self.__sys_out("Successfully completed mobile search", 1, True)
             else:
-                self.__completed = self.__search(mobile_driver.driver, Driver.MOBILE_PLATFORM)
+                self.__sys_out("Failed to complete mobile search", 1, True)
         except:
             mobile_driver.close()
             raise
 
-        self.__sys_out("Successfully completed mobile search", 1, True)
         if close:
             mobile_driver.close()
         else:
@@ -418,7 +455,7 @@ class Rewards:
 
         try:
             if not driver:
-                driver = Driver(self.path, Driver.MOBILE_PLATFORM, self.headless)
+                driver = Driver(self.path, Driver.MOBILE_DEVICE, self.headless)
                 self.__login(driver.driver)
         
             self.__completed = self.__offers(driver.driver)
