@@ -6,8 +6,9 @@ An automated solution for earning daily Microsoft Rewards points.
 1. This solution requires Google Chrome which can be downloaded from https://www.google.com/chrome/browser/desktop/index.html.
 2. If you don't already have Python 3 installed, visit https://www.python.org/. 
 3. Now install the dependencies using the *__BingRewards/requirements.txt__* file included in the repo: `pip install -r BingRewards/requirements.txt`.
-4. Next you'll need to create a configuration file that stores your Micrrosoft account credentials. Run *__setup.py__* and enter the necessary info. This will create the file *__BingRewards/src/config.py__* for you. Rest assured, **your credentials will NOT be stored in plain text.**
-5. And you're all set! You can now either run *__BingRewards/BingRewards.py__* and follow the on-screen instructions to get started or pass the argument `-d` to run it entirely through: `python BingRewards/BingRewards.py -d`. You can also execute one of the two, *__run_windows.vbs__* or *__run_mac.app__* depending on your OS, to run the script without any terminals or command lines popping up. This way, there is no interference with your daily routine.
+4. Next you'll need to create a configuration file that stores your Micrrosoft account credentials. Run *__setup.py__* and enter the necessary info. This will create the file *__BingRewards/src/config.py__* for you. Rest assured, __your credentials will NOT be stored in plain text__.
+5. __You must have signed onto your account using this machine before__. Open Chrome and visit https://login.live.com. The site may ask to send you a verification email or text.
+6. And you're all set! You can now either run *__BingRewards/BingRewards.py__* and follow the on-screen instructions to get started or pass the argument `-d` to run it entirely through: `python BingRewards/BingRewards.py -d`. You can also execute one of the two, *__run_windows.vbs__* or *__run_mac.app__* depending on your OS, to run the script without any terminals or command lines popping up. This way, there is no interference with your daily routine.
 
 ## Scheduling (Optional)
 You may want to use your operating system's scheduler to run the script every time you unlock your machine and/or everyday at 12AM PST incase you leave your machine running for periods longer than 24 hours.
@@ -38,7 +39,6 @@ You may want to use your operating system's scheduler to run the script every ti
 - Automation is a hobby and this project was a way to enhance my programming skills. As a result, it may also be seldomly maintained. 
 
 ## Known Issues
-- Error retrieving current search progress.
 - Engagement in daily offers suddenly hangs.
 - Quiz offers failing to complete.
 
