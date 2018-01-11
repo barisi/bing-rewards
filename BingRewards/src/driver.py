@@ -238,20 +238,35 @@ class Rewards:
 
 
         ## start quiz
+        try_count = 0
         while True:
             try:
                 driver.find_element_by_id("btOverlay")
                 break
             except:
+                try_count += 1
+                if try_count == 4:
+                    break
                 time.sleep(1)
-        driver.switch_to_active_element()
 
-        start_quiz = driver.find_element_by_xpath('//*[@id="rqStartQuiz"]/div')
-        if start_quiz.is_displayed():
-            ActionChains(driver).move_to_element(start_quiz).click()
-
+        if driver.find_element_by_id("rqStartQuiz").is_displayed():
+            try_count = 0
+            while True:
+                start_quiz = driver.find_element_by_id("rqStartQuiz")
+                if start_quiz.is_displayed():
+                    start_quiz.click()
+                else:
+                    try:
+                        if driver.find_element_by_id("quizWelcomeContainer").get_attribute("style") == "display: none;":
+                            break
+                    except: 
+                        driver.refresh()
+                try_count += 1
+                if try_count == 4:
+                    break
         else:
             self.__sys_out("Already started quiz", 4)
+
         quiz_options_len = 4
 
 
@@ -299,9 +314,6 @@ class Rewards:
                     # update incorrect options
                     incorrect_options.append((from_option_index, to_option_index))
                     incorrect_options.append((to_option_index, from_option_index))
-                    if len(incorrect_options)/2 == quiz_options_len:
-                        self.__sys_out("Failed to complete quiz", 3, True, True)
-                        return
             
 
                 exit_code = -1 # no choices were swapped
@@ -329,7 +341,7 @@ class Rewards:
                 
                 if exit_code == -1: 
                     self.__sys_out("Failed to complete quiz", 3, True, True)
-                    return
+                    return False
                 elif exit_code == 0:
                     break
 
@@ -360,10 +372,11 @@ class Rewards:
                     option_index += 1
                     if option_index == quiz_options_len:
                         self.__sys_out("Failed to complete quiz", 3, True, True)
-                        return
+                        return False
 
 
         self.__sys_out("Successfully completed quiz", 3, True, True)
+        return True
     def __handle_alerts(self, driver):
         try:
             driver.switch_to.alert.dismiss()
@@ -389,12 +402,16 @@ class Rewards:
             driver.switch_to.window(driver.window_handles[-1])
         
             self.__handle_alerts(driver)
+
+            completed = True
             if "quiz" in title.lower():
-                self.__quiz(driver)
+                completed = self.__quiz(driver)
+            if completed:
+                self.__sys_out("Successfully completed {0}".format(title), 2, True)
+            else:
+                self.__sys_out("Failed to complete {0}".format(title), 2, True)
 
             driver.switch_to.window(driver.window_handles[0])
-            self.__sys_out("Successfully completed {0}".format(title), 2, True)
-
             driver.get(self.__DASHBOARD_URL) # for stale element exception
         return driver.find_elements_by_xpath('//*[@id="dashboard"]/div[1]/div[1]/*')
     def __offers(self, driver):
