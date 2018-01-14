@@ -29,21 +29,20 @@ class Driver:
     __WEB_USER_AGENT            = "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.10240"
     __MOBILE_USER_AGENT         = "Mozilla/5.0 (Linux; Android 8.0; Pixel XL Build/OPP3.170518.006) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.0 Mobile Safari/537.36 EdgA/41.1.35.1"
 
-    __WINDOWS_DRIVER_URL        = "https://chromedriver.storage.googleapis.com/2.34/chromedriver_win32.zip"
-    __MAC_DRIVER_URL            = "https://chromedriver.storage.googleapis.com/2.34/chromedriver_mac64.zip"
+    __DRIVER_VERSION            = 2.34
 
 
     def __init__(self, path, device, headless):
         self.driver = self.__get_driver(path, device, headless)
 
-    def __download_driver(self, path, system):
+    def __download_driver(self, driver_path, system):
         if system == "Windows":
-            url = self.__WINDOWS_DRIVER_URL
+            url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_win32.zip".format(self.__DRIVER_VERSION)
         elif system == "Darwin":
-            url = self.__MAC_DRIVER_URL
+            url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_mac64.zip".format(self.__DRIVER_VERSION)
 
         response = urlopen(url, context=ssl.SSLContext(ssl.PROTOCOL_TLSv1)) # context args for mac
-        zip_file_path = os.path.join(os.path.dirname(path), os.path.basename(url))
+        zip_file_path = os.path.join(os.path.dirname(driver_path), os.path.basename(url))
         with open(zip_file_path, 'wb') as zip_file:
             while True:
                 chunk = response.read(1024)
@@ -57,10 +56,10 @@ class Driver:
         os.remove(zip_file_path)
 
         driver = os.listdir(extracted_dir)[0]
-        os.rename(os.path.join(extracted_dir, driver), path)
+        os.rename(os.path.join(extracted_dir, driver), driver_path)
         os.rmdir(extracted_dir)
 
-        os.chmod(path, 0o755)
+        os.chmod(driver_path, 0o755)
     def __get_driver(self, path, device, headless):
         system = platform.system()
         if system == "Windows":
@@ -115,10 +114,11 @@ class Rewards:
 
 
     def __get_sys_out_prefix(self, lvl, end):
+        prefix = " "*(self.__SYS_OUT_TAB_LEN*(lvl-1)-(lvl-1))
         if not end:
-            return " "*(self.__SYS_OUT_TAB_LEN*(lvl-1)-(lvl-1)) + ">"*lvl + " "
+            return prefix + ">"*lvl + " "
         else:
-            return " "*(self.__SYS_OUT_TAB_LEN*(lvl-1)-(lvl-1)) + " "*int(self.__SYS_OUT_TAB_LEN/2) + "<"*lvl + " "
+            return prefix + " "*int(self.__SYS_OUT_TAB_LEN/2) + "<"*lvl + " "
     def __sys_out(self, msg, lvl, end=False, flush=False):
         if self.debug:
             if flush: # because of progress bar
@@ -151,7 +151,7 @@ class Rewards:
         self.__sys_out("Successfully logged in", 2, True)
 
     def __get_search_progress(self, driver, device):
-        if len(driver.window_handles) == 1:
+        if len(driver.window_handles) == 1: # open new tab
             driver.execute_script('''window.open("{0}");'''.format(self.__DASHBOARD_URL))
         driver.switch_to.window(driver.window_handles[-1])
         driver.get(self.__DASHBOARD_URL)
@@ -160,10 +160,10 @@ class Rewards:
         if device == Driver.WEB_DEVICE:
             web_progress_elements = [None, None]
             for element in progress_elements:
-                progress_name = element.find_element_by_xpath("./div[1]/div[1]").text
-                if progress_name == "PC search" or progress_name == "Daily search":
+                progress_name = element.find_element_by_xpath("./div[1]/div[1]").text.lower()
+                if "pc" in progress_name or "daily" in progress_name:
                     web_progress_elements[0] = element.find_element_by_xpath("./div[1]/div[3]")
-                elif progress_name == "Microsoft Edge bonus":
+                elif "bonus" in progress_name:
                     web_progress_elements[1] = element.find_element_by_xpath("./div[1]/div[3]")
 
             if web_progress_elements[0]:
@@ -180,8 +180,8 @@ class Rewards:
         else:
             mobile_progress_element = None
             for element in progress_elements:
-                progress_name = element.find_element_by_xpath("./div[1]/div[1]").text
-                if progress_name == "Mobile search" or progress_name == "Daily search":
+                progress_name = element.find_element_by_xpath("./div[1]/div[1]").text.lower()
+                if "mobile" in progress_name or "daily" in progress_name:
                     mobile_progress_element = element.find_element_by_xpath("./div[1]/div[3]")
 
             if mobile_progress_element:
@@ -221,7 +221,7 @@ class Rewards:
         self.__sys_out("Completed searching", 2, True, True)
         return True
 
-    def __get_quiz_progress(self, driver):
+    def __get_quiz_progress(self, driver, try_count=0):
         try:
             questions = driver.find_elements_by_xpath('//*[@id="rqHeaderCredits"]/div[2]/*')
             current_progress, complete_progress = 0, len(questions)
@@ -232,7 +232,10 @@ class Rewards:
                     break
             return current_progress-1, complete_progress
         except:
-            return self.__get_quiz_progress(driver)
+            if try_count < 4:
+                return self.__get_quiz_progress(driver, try_count+1)
+            else:
+                return 0, -1
     def __quiz(self, driver):
         self.__sys_out("Started quiz", 3)
 
@@ -271,7 +274,6 @@ class Rewards:
 
 
 
-        ## drag and drop
         is_drag_and_drop = False
         try:
             WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.ID, 'rqAnswerOptionNum0')))
@@ -281,6 +283,7 @@ class Rewards:
             self.__sys_out("Multiple choice", 4)
 
 
+        ## drag and drop
         if is_drag_and_drop:
             time.sleep(5) # let demo complete
 
@@ -296,7 +299,8 @@ class Rewards:
             from_option_index, to_option_index = -1, -1
             while True:
                 current_progress, complete_progress = self.__get_quiz_progress(driver)
-                self.__sys_out_progress(current_progress, complete_progress, 4)
+                if complete_progress > 0:
+                    self.__sys_out_progress(current_progress, complete_progress, 4)
 
                 # get all correct combinations so to not use them again
                 correct_options = []
@@ -353,7 +357,8 @@ class Rewards:
             try_count = 0
             while True:
                 current_progress, complete_progress = self.__get_quiz_progress(driver)
-                self.__sys_out_progress(current_progress, complete_progress, 4)
+                if complete_progress > 0:
+                    self.__sys_out_progress(current_progress, complete_progress, 4)
 
                 try:
                     WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.element_to_be_clickable((By.ID, "rqAnswerOption{0}".format(option_index)))).click()
@@ -406,6 +411,8 @@ class Rewards:
             completed = True
             if "quiz" in title.lower():
                 completed = self.__quiz(driver)
+            else:
+                time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
             if completed:
                 self.__sys_out("Successfully completed {0}".format(title), 2, True)
             else:
@@ -440,7 +447,10 @@ class Rewards:
             else:
                 self.__sys_out("Failed to complete web search", 1, True)
         except:
-            web_driver.close()
+            try:
+                web_driver.close()
+            except: # not yet initialized
+                pass
             raise
 
         if close:
@@ -460,7 +470,10 @@ class Rewards:
             else:
                 self.__sys_out("Failed to complete mobile search", 1, True)
         except:
-            mobile_driver.close()
+            try:
+                mobile_driver.close()
+            except: # not yet initialized
+                pass
             raise
 
         if close:
@@ -477,11 +490,14 @@ class Rewards:
         
             self.__completed = self.__offers(driver.driver)
             driver.close()
-        except:
-            driver.close()
-            raise
 
-        self.__sys_out("Successfully completed offers", 1, True)
+            self.__sys_out("Successfully completed offers", 1, True)
+        except:
+            try:
+                driver.close()
+            except:
+                pass
+            raise
 
     def complete_mobile_search(self): 
         self.__complete_mobile_search()

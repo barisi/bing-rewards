@@ -22,17 +22,20 @@ HEADLESS                = True
 
 class HistLog:
     __DATETIME_FORMAT   = "%A, %B %d %Y %I:%M%p %Z"
+
     __LOCAL_TIMEZONE    = tzlocal()
     __PST_TIMEZONE      = pytz.timezone("US/Pacific")
+
     __RESET_HOUR        = 0 # AM PST
     __MAX_HIST_LEN      = 7 # days
 
     __COMPLETED_TRUE    = "Successful"
     __COMPLETED_FALSE   = "Failed"
 
-    def __init__(self, path, ran_datetime=datetime.now()):
+
+    def __init__(self, path, run_datetime=datetime.now()):
         self.path = path
-        self.run_datetime = ran_datetime.replace(tzinfo=self.__LOCAL_TIMEZONE)
+        self.run_datetime = run_datetime.replace(tzinfo=self.__LOCAL_TIMEZONE)
         self.hist = self.__read()
 
     def __read(self):
@@ -84,7 +87,7 @@ def get_formatted_time(time_elapsed):
     minutes = seconds//60
     seconds = seconds%60
     formatted_time = "{0}:{1:>02d}:{2:>03d}".format(minutes, seconds, time_elapsed.microseconds//1000)
-    print("Elapsed time: {0}".format(formatted_time))
+    print("Elapsed time: {}".format(formatted_time))
     return formatted_time
     
 
@@ -147,7 +150,7 @@ if __name__ == "__main__":
             from src import config
         except:
             print("\n{}".format("Failed to import configuration file"))
-            time.sleep(2)
+            time.sleep(1)
             raise
         
         if not os.path.exists(DRIVERS_DIR):
