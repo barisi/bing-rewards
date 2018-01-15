@@ -257,7 +257,10 @@ class Rewards:
             while True:
                 start_quiz = driver.find_element_by_id("rqStartQuiz")
                 if start_quiz.is_displayed():
-                    start_quiz.click()
+                    try:
+                        start_quiz.click()
+                    except:
+                        driver.refresh()
                 else:
                     try:
                         if driver.find_element_by_id("quizWelcomeContainer").get_attribute("style") == "display: none;":
