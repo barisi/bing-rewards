@@ -137,8 +137,9 @@ class Rewards:
         self.password           = password
         self.debug              = debug
         self.headless           = headless
-        self.__completion       = Completion()
         #self.__level            = -1
+        self.__completion       = Completion()
+        self.__dashboard_type   = 0
 
 
     def __get_sys_out_prefix(self, lvl, end):
@@ -182,24 +183,42 @@ class Rewards:
         if len(driver.window_handles) == 1: # open new tab
             driver.execute_script('''window.open("{0}");'''.format(self.__DASHBOARD_URL))
         driver.switch_to.window(driver.window_handles[-1])
-        driver.get(self.__DASHBOARD_URL)
+        
+        if self.__dashboard_type == 0:
+            driver.get(self.__DASHBOARD_URL)
+            try:
+                progress_elements = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_all_elements_located((By.XPATH, '//*[@id="dashboard"]/div[2]/aside/div[3]/div[*]')))
+            except:
+                self.__dashboard_type = 1
+                self.__sys_out("Dashboard Type: 2", 3)
+        if self.__dashboard_type == 1:
+            driver.get("https://account.microsoft.com/rewards/pointsbreakdown")
+            progress_elements = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_all_elements_located((By.XPATH, '//*[@id="userPointsBreakdown"]/div/div[*]')))[1:]
 
-        progress_elements = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_all_elements_located((By.XPATH, '//*[@id="dashboard"]/div[2]/aside/div[3]/div[*]')))
         if device == Driver.WEB_DEVICE:
             web_progress_elements = [None, None]
             for element in progress_elements:
-                progress_name = element.find_element_by_xpath("./div[1]/div[1]").text.lower()
+                if self.__dashboard_type == 0:
+                    progress_name = element.find_element_by_xpath("./div[1]/div[1]").text.lower()
+                else:
+                    progress_name = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[1]/a').text.lower()
                 if "pc" in progress_name or "daily" in progress_name:
-                    web_progress_elements[0] = element.find_element_by_xpath("./div[1]/div[3]")
+                    if self.__dashboard_type == 0:
+                        web_progress_elements[0] = element.find_element_by_xpath("./div[1]/div[3]")
+                    else:
+                        web_progress_elements[0] = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]')
                 elif "bonus" in progress_name:
-                    web_progress_elements[1] = element.find_element_by_xpath("./div[1]/div[3]")
+                    if self.__dashboard_type == 0:
+                        web_progress_elements[1] = element.find_element_by_xpath("./div[1]/div[3]")
+                    else:
+                        web_progress_elements[1] = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]')
 
             if web_progress_elements[0]:
-                current_progress, complete_progress = [int(i) for i in re.findall(r'(\d+) of (\d+) points', web_progress_elements[0].text)[0]]
+                current_progress, complete_progress = [int(i) for i in re.findall(r'(\d+)', web_progress_elements[0].text)]
 
                 # get bonus points 
                 if web_progress_elements[1]:
-                    bonus_progress = [int(i) for i in re.findall(r'(\d+) of (\d+) points', web_progress_elements[1].text)[0]]
+                    bonus_progress = [int(i) for i in re.findall(r'(\d+)', web_progress_elements[1].text)]
                     current_progress += bonus_progress[0]
                     complete_progress += bonus_progress[1]
             else:
@@ -208,12 +227,18 @@ class Rewards:
         else:
             mobile_progress_element = None
             for element in progress_elements:
-                progress_name = element.find_element_by_xpath("./div[1]/div[1]").text.lower()
+                if self.__dashboard_type == 0:
+                    progress_name = element.find_element_by_xpath("./div[1]/div[1]").text.lower()
+                else:
+                    progress_name = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[1]/a').text.lower()
                 if "mobile" in progress_name or "daily" in progress_name:
-                    mobile_progress_element = element.find_element_by_xpath("./div[1]/div[3]")
+                    if self.__dashboard_type == 0:
+                        mobile_progress_element = element.find_element_by_xpath("./div[1]/div[3]")
+                    else:
+                        mobile_progress_element = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]')
 
             if mobile_progress_element:
-                current_progress, complete_progress = [int(i) for i in re.findall(r'(\d+) of (\d+) points', mobile_progress_element.text)[0]]
+                current_progress, complete_progress = [int(i) for i in re.findall(r'(\d+)', mobile_progress_element.text)]
             else:
                 current_progress, complete_progress = 0, -1
 
@@ -455,8 +480,18 @@ class Rewards:
     def __offers(self, driver):
         ## showcase offer
         driver.get(self.__DASHBOARD_URL)
-        offer = driver.find_element_by_xpath('//*[@id="dashboard"]/div[1]/a')
+        
+        if self.__dashboard_type == 0:
+            try:
+                offer = driver.find_element_by_xpath('//*[@id="dashboard"]/div[1]/a')
+            except:
+                self.__dashboard_type = 1
+                self.__sys_out("Dashboard Type: 2", 2)
+        if self.__dashboard_type == 1:
+            return False
+
         offers = self.__click_offer(driver, offer, './div[3]/div/div/div/div[1]/div[1]', './div[3]/div/div/div/div[2]/span/span[2]')
+
 
         ## loop through rest of offers
         for index in range(len(offers)):
@@ -520,9 +555,12 @@ class Rewards:
                 self.__login(driver.driver)
         
             self.__completion.offers = self.__offers(driver.driver)
-            driver.close()
+            if self.__completion.offers:
+                self.__sys_out("Successfully completed offers", 1, True)
+            else:
+                self.__sys_out("Failed to complete offers", 1, True)
 
-            self.__sys_out("Successfully completed offers", 1, True)
+            driver.close()
         except:
             try:
                 driver.close()
