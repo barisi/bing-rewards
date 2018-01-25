@@ -246,7 +246,7 @@ class Rewards:
         #driver.get(self.__BING_URL)
         return current_progress, complete_progress
     def __search(self, driver, device):
-        self.__sys_out("Started searching", 2)
+        self.__sys_out("Starting search", 2)
         driver.get(self.__BING_URL)    
 
         prev_progress = -1
@@ -290,7 +290,7 @@ class Rewards:
             else:
                 return 0, -1
     def __quiz(self, driver):
-        self.__sys_out("Started quiz", 3)
+        self.__sys_out("Starting quiz", 3)
 
 
         ## start quiz
@@ -438,12 +438,13 @@ class Rewards:
 
         self.__sys_out("Successfully completed quiz", 3, True, True)
         return True
+
     def __handle_alerts(self, driver):
         try:
             driver.switch_to.alert.dismiss()
         except:
             pass
-    def __click_offer(self, driver, offer, title_xpath, checked_xpath):
+    def __click_offer(self, driver, offer, title_xpath, checked_xpath, checked_class):
         title = offer.find_element_by_xpath(title_xpath).text
         self.__sys_out("Trying {0}".format(title), 2)
 
@@ -451,15 +452,15 @@ class Rewards:
         checked = False
         try:
             icon = offer.find_element_by_xpath(checked_xpath)
-            if icon.get_attribute('class') == 'pull-left win-icon win-icon-CheckMark card-button-line-height':
+            if icon.get_attribute('class') == checked_class:
                 checked = True
                 self.__sys_out("Already checked", 2, True)
         except:
             pass
 
         if not checked:
-            #offer.click()
-            driver.execute_script('''window.open("{0}","_blank");'''.format(offer.get_attribute("href")))
+            offer.click()
+            #driver.execute_script('''window.open("{0}","_blank");'''.format(offer.get_attribute("href")))
             driver.switch_to.window(driver.window_handles[-1])
         
             self.__handle_alerts(driver)
@@ -476,7 +477,8 @@ class Rewards:
 
             driver.switch_to.window(driver.window_handles[0])
             driver.get(self.__DASHBOARD_URL) # for stale element exception
-        return driver.find_elements_by_xpath('//*[@id="dashboard"]/div[1]/div[1]/*')
+        
+        return
     def __offers(self, driver):
         ## showcase offer
         driver.get(self.__DASHBOARD_URL)
@@ -484,24 +486,34 @@ class Rewards:
         if self.__dashboard_type == 0:
             try:
                 offer = driver.find_element_by_xpath('//*[@id="dashboard"]/div[1]/a')
+                self.__click_offer(driver, offer, './div[3]/div/div/div/div[1]/div[1]', './div[3]/div/div/div/div[2]/span/span[2]', 'pull-left win-icon win-icon-CheckMark card-button-line-height')
+
+                ## loop through rest of offers
+                offers = driver.find_elements_by_xpath('//*[@id="dashboard"]/div[1]/div[1]/*')
+                for index in range(len(offers)):
+                    offer = offers[-index]
+                    self.__click_offer(driver, offer, './div/div/div[1]/div[1]', './div/div/div[2]/span/span[2]', 'pull-left win-icon win-icon-CheckMark card-button-line-height')
+                    offers = driver.find_elements_by_xpath('//*[@id="dashboard"]/div[1]/div[1]/*')
+
             except:
                 self.__dashboard_type = 1
                 self.__sys_out("Dashboard Type: 2", 2)
+
         if self.__dashboard_type == 1:
-            return False
+            ## daily set
+            for i in range(3):
+                offer = driver.find_element_by_xpath('//*[@id="daily-sets"]/mee-rewards-card-placement[1]/div/div/div[{}]/{}/mee-rewards-daily-sets-item/mee-rewards-card/div/div'.format(1 if i == 0 else 2, 'item{}'.format(i) if i == 0 else 'div[{0}]/item{0}'.format(i)))
+                self.__click_offer(driver, offer, './section/div/div[2]/h3', './section/div/div[2]/mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+            ## more activities
+            for i in range(8):
+                offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, (i%2)+1, i))
+                self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
 
-        offers = self.__click_offer(driver, offer, './div[3]/div/div/div/div[1]/div[1]', './div[3]/div/div/div/div[2]/span/span[2]')
-
-
-        ## loop through rest of offers
-        for index in range(len(offers)):
-            offer = offers[-index]
-            offers = self.__click_offer(driver, offer, './div/div/div[1]/div[1]', './div/div/div[2]/span/span[2]')
 
         return True
 
     def __complete_web_search(self, close=True):
-        self.__sys_out("Started web search", 1)
+        self.__sys_out("Starting web search", 1)
 
         try:
             web_driver = Driver(self.path, Driver.WEB_DEVICE, self.headless)
@@ -524,7 +536,7 @@ class Rewards:
         else:
             return web_driver
     def __complete_mobile_search(self, close=True): 
-        self.__sys_out("Started mobile search", 1)
+        self.__sys_out("Starting mobile search", 1)
 
         try:
             mobile_driver = Driver(self.path, Driver.MOBILE_DEVICE, self.headless)
@@ -547,7 +559,7 @@ class Rewards:
         else:
             return mobile_driver
     def __complete_offers(self, driver=None):
-        self.__sys_out("Started offers", 1)
+        self.__sys_out("Starting offers", 1)
 
         try:
             if not driver:
