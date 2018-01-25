@@ -91,6 +91,34 @@ class Driver:
             self.driver.switch_to.window(handle)
             self.driver.close()
 
+
+class Completion:
+    def __init__(self):
+        self.web_search         = False
+        self.mobile_search      = False
+        self.offers             = False
+
+    def is_web_search_completed(self):
+        return self.web_search
+    def is_mobile_search_completed(self):
+        return self.mobile_search
+    def is_both_searches_completed(self):
+        return self.web_search and self.mobile_search
+    def is_any_searches_completed(self):
+        return self.web_search or self.mobile_search
+    def is_offers_completed(self):
+        return self.offers
+    def is_all_completed(self):
+        return self.web_search and self.mobile_search and self.offers
+    def is_any_completed(self):
+        return self.web_search or self.mobile_search or self.offers
+
+    def update(self, completion):
+        self.web_search = max(self.web_search, completion.web_search)
+        self.mobile_search = max(self.mobile_search, completion.mobile_search)
+        self.offers = max(self.offers, completion.offers)
+
+
 class Rewards:
     __LOGIN_URL                 = "https://login.live.com"
     __BING_URL                  = "https://bing.com"
@@ -109,7 +137,7 @@ class Rewards:
         self.password           = password
         self.debug              = debug
         self.headless           = headless
-        self.__completed        = False
+        self.__completion       = Completion()
         #self.__level            = -1
 
 
@@ -444,8 +472,8 @@ class Rewards:
             web_driver = Driver(self.path, Driver.WEB_DEVICE, self.headless)
             self.__login(web_driver.driver)
         
-            self.__completed = self.__search(web_driver.driver, Driver.WEB_DEVICE)
-            if self.__completed:
+            self.__completion.web_search = self.__search(web_driver.driver, Driver.WEB_DEVICE)
+            if self.__completion.web_search:
                 self.__sys_out("Successfully completed web search", 1, True)
             else:
                 self.__sys_out("Failed to complete web search", 1, True)
@@ -467,8 +495,8 @@ class Rewards:
             mobile_driver = Driver(self.path, Driver.MOBILE_DEVICE, self.headless)
             self.__login(mobile_driver.driver)
     
-            self.__completed = self.__search(mobile_driver.driver, Driver.MOBILE_DEVICE)
-            if self.__completed:
+            self.__completion.mobile_search = self.__search(mobile_driver.driver, Driver.MOBILE_DEVICE)
+            if self.__completion.mobile_search:
                 self.__sys_out("Successfully completed mobile search", 1, True)
             else:
                 self.__sys_out("Failed to complete mobile search", 1, True)
@@ -491,7 +519,7 @@ class Rewards:
                 driver = Driver(self.path, Driver.MOBILE_DEVICE, self.headless)
                 self.__login(driver.driver)
         
-            self.__completed = self.__offers(driver.driver)
+            self.__completion.offers = self.__offers(driver.driver)
             driver.close()
 
             self.__sys_out("Successfully completed offers", 1, True)
@@ -504,21 +532,21 @@ class Rewards:
 
     def complete_mobile_search(self): 
         self.__complete_mobile_search()
-        return self.__completed
+        return self.__completion
     def complete_web_search(self):
         self.__complete_web_search()
-        return self.__completed
-    def complete_both(self):
+        return self.__completion
+    def complete_both_searches(self):
         self.__complete_web_search()
         self.__complete_mobile_search()
-        return self.__completed
+        return self.__completion
     def complete_offers(self):
         self.__complete_offers()
-        return self.__completed
+        return self.__completion
     def complete_all(self):
         self.__complete_web_search()
-        mobile_driver = self.__complete_mobile_search(False)
+        mobile_driver = self.__complete_mobile_search(close=False)
         self.__complete_offers(mobile_driver)
-        return self.__completed
+        return self.__completion
 
 
