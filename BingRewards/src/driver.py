@@ -505,10 +505,27 @@ class Rewards:
                 offer = driver.find_element_by_xpath('//*[@id="daily-sets"]/mee-rewards-card-placement[1]/div/div/div[{}]/{}/mee-rewards-daily-sets-item/mee-rewards-card/div/div'.format(1 if i == 0 else 2, 'item{}'.format(i) if i == 0 else 'div[{0}]/item{0}'.format(i)))
                 self.__click_offer(driver, offer, './section/div/div[2]/h3', './section/div/div[2]/mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
             ## more activities
-            for i in range(8):
-                offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, (i%2)+1, i))
-                self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
-
+            item_num = 0
+            i = 0
+            while i < 8:
+                # if offer takes up 2 spaces length wise
+                try:
+                    offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, item_num))
+                    self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                    i += 1
+                    item_num += 1
+                except:
+                    # if offer takes up 1 space
+                    try:
+                        offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, (i%2)+1, item_num))
+                        self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                        item_num += 1
+                    # if offer takes up 4 spaces (length 2, width 2)
+                    except:
+                        pass
+                #offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, (i%2)+1, i))
+                #self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                i += 1
 
         return True
 
