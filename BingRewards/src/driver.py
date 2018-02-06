@@ -458,6 +458,7 @@ class Rewards:
         except:
             pass
 
+        completed = True
         if not checked:
             offer.click()
             #driver.execute_script('''window.open("{0}","_blank");'''.format(offer.get_attribute("href")))
@@ -465,7 +466,6 @@ class Rewards:
         
             self.__handle_alerts(driver)
 
-            completed = True
             if "quiz" in title.lower():
                 completed = self.__quiz(driver)
             else:
@@ -478,21 +478,24 @@ class Rewards:
             driver.switch_to.window(driver.window_handles[0])
             driver.get(self.__DASHBOARD_URL) # for stale element exception
         
-        return
+        return completed
     def __offers(self, driver):
         ## showcase offer
         driver.get(self.__DASHBOARD_URL)
         
+        completed = []
         if self.__dashboard_type == 0:
             try:
                 offer = driver.find_element_by_xpath('//*[@id="dashboard"]/div[1]/a')
-                self.__click_offer(driver, offer, './div[3]/div/div/div/div[1]/div[1]', './div[3]/div/div/div/div[2]/span/span[2]', 'pull-left win-icon win-icon-CheckMark card-button-line-height')
+                c = self.__click_offer(driver, offer, './div[3]/div/div/div/div[1]/div[1]', './div[3]/div/div/div/div[2]/span/span[2]', 'pull-left win-icon win-icon-CheckMark card-button-line-height')
+                completed.append(c)
 
                 ## loop through rest of offers
                 offers = driver.find_elements_by_xpath('//*[@id="dashboard"]/div[1]/div[1]/*')
                 for index in range(len(offers)):
                     offer = offers[-index]
-                    self.__click_offer(driver, offer, './div/div/div[1]/div[1]', './div/div/div[2]/span/span[2]', 'pull-left win-icon win-icon-CheckMark card-button-line-height')
+                    c = self.__click_offer(driver, offer, './div/div/div[1]/div[1]', './div/div/div[2]/span/span[2]', 'pull-left win-icon win-icon-CheckMark card-button-line-height')
+                    completed.append(c)
                     offers = driver.find_elements_by_xpath('//*[@id="dashboard"]/div[1]/div[1]/*')
 
             except:
@@ -503,7 +506,8 @@ class Rewards:
             ## daily set
             for i in range(3):
                 offer = driver.find_element_by_xpath('//*[@id="daily-sets"]/mee-rewards-card-placement[1]/div/div/div[{}]/{}/mee-rewards-daily-sets-item/mee-rewards-card/div/div'.format(1 if i == 0 else 2, 'item{}'.format(i) if i == 0 else 'div[{0}]/item{0}'.format(i)))
-                self.__click_offer(driver, offer, './section/div/div[2]/h3', './section/div/div[2]/mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                c = self.__click_offer(driver, offer, './section/div/div[2]/h3', './section/div/div[2]/mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                completed.append(c)
             ## more activities
             item_num = 0
             i = 0
@@ -511,23 +515,26 @@ class Rewards:
                 # if offer takes up 2 spaces length wise
                 try:
                     offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, item_num))
-                    self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                    c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                    completed.append(c)
                     i += 1
                     item_num += 1
                 except:
                     # if offer takes up 1 space
                     try:
                         offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, (i%2)+1, item_num))
-                        self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                        c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                        completed.append(c)
                         item_num += 1
                     # if offer takes up 4 spaces (length 2, width 2)
                     except:
                         pass
                 #offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, (i%2)+1, i))
-                #self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                #c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                #completed.append(c)
                 i += 1
 
-        return True
+        return min(completed)
 
     def __complete_web_search(self, close=True):
         self.__sys_out("Starting web search", 1)
