@@ -8,16 +8,17 @@ An automated solution for earning daily Microsoft Rewards points.
 3. Now install the dependencies using the *__BingRewards/requirements.txt__* file included in the repo: `pip install -r BingRewards/requirements.txt`.
 4. Next you'll need to create a configuration file that stores your Micrrosoft account credentials. Run *__setup.py__* and enter the necessary info. This will create the file *__BingRewards/src/config.py__* for you and can be rerun every time you update your password. Rest assured, __your credentials will NOT be stored in plain text__.
 5. __You must have signed onto your account using this machine before__. Open Chrome and visit https://login.live.com. The site may ask to send you a verification email or text.
-6. And you're all set! You can now either run *__BingRewards/BingRewards.py__* and follow the on-screen instructions to get started or pass the argument `-d` to run it entirely through: `python BingRewards/BingRewards.py -d`. If you are on a PC, you can also execute *__run_windows.vbs__* to run the script without any command lines popping up. This way, there is no interference with your daily routine. Mac users can also achieve this by following part of the optional Scheduling instructions below.
+6. And you're all set! You can now either run *__BingRewards/BingRewards.py__* and follow the on-screen instructions to get started or pass the argument `-d` to run it entirely through: `python BingRewards/BingRewards.py -d`.
 
 ## Scheduling (Optional)
-You may want to use your operating system's scheduler to run the script every time you unlock your machine and/or everyday at 12AM PST incase you leave your machine running for periods longer than 24 hours.
+You may want to use your operating system's scheduler to run the script every time you unlock your machine and/or everyday at 12AM PST incase you leave your machine running for periods longer than 24 hours. As an added bonus, the script will run completely in the background and __should NOT interfere with your daily routine.__
 
 ### Windows
 1. Open *Task Scheduler* and click *Create Task*.
-2. Add a new trigger, either *On workstation unlock* for your specific username or *On a schedule* daily depending on what you want. 
-3. When adding the action, you may need to point the program to *__C:/Windows/System32/wscript.exe__* and add *__/absolute/path/to/run_windows.vbs__* with the correct path as the argument. 
-4. It's also recommended to add the condition to only execute when there is a network connection available.
+2. Choose *Run whether user is logged on or not* under *Security options* and check the box at the bottom that says *Hidden*.
+3. Add a new trigger, either *On workstation unlock* for your specific username or *On a schedule* daily depending on what you want. 
+4. When adding the action, point the program to *__python.exe__* (most likely located in *__C:/Program Files__*) and add the argument line `BingRewards/BingRewards.py -d`. In the *Start in* box, place the absolute path to where you've cloned this repository.
+5. It's also recommended to select the option to only execute when there is a network connection available under the *Conditions* tab.
 
 ### Mac
 1. Open *Automator* and choose *Application*
