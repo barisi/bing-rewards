@@ -201,7 +201,7 @@ class Rewards:
                 if self.__dashboard_type == 0:
                     progress_name = element.find_element_by_xpath("./div[1]/div[1]").text.lower()
                 else:
-                    progress_name = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[1]/a').text.lower()
+                    progress_name = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[1]').text.lower()
                 if "pc" in progress_name or "daily" in progress_name:
                     if self.__dashboard_type == 0:
                         web_progress_elements[0] = element.find_element_by_xpath("./div[1]/div[3]")
@@ -230,7 +230,7 @@ class Rewards:
                 if self.__dashboard_type == 0:
                     progress_name = element.find_element_by_xpath("./div[1]/div[1]").text.lower()
                 else:
-                    progress_name = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[1]/a').text.lower()
+                    progress_name = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[1]').text.lower()
                 if "mobile" in progress_name or "daily" in progress_name:
                     if self.__dashboard_type == 0:
                         mobile_progress_element = element.find_element_by_xpath("./div[1]/div[3]")
