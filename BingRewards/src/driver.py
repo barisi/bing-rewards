@@ -370,6 +370,7 @@ class Rewards:
                 if current_progress != prev_progress: # new question
                     incorrect_options = []
                     prev_progress =  current_progress
+                    self.__handle_alerts(driver)
                 else:
                     # update incorrect options
                     incorrect_options.append((from_option_index, to_option_index))
@@ -411,10 +412,14 @@ class Rewards:
         else:
             option_index = 0
             try_count = 0
+            prev_progress = -1
             while True:
                 current_progress, complete_progress = self.__get_quiz_progress(driver)
                 if complete_progress > 0:
                     self.__sys_out_progress(current_progress, complete_progress, 4)
+                    if current_progress != prev_progress:
+                        prev_progress = current_progress
+                        self.__handle_alerts(driver)
 
                 try:
                     WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.element_to_be_clickable((By.ID, "rqAnswerOption{0}".format(option_index)))).click()
