@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from dateutil.tz import tzlocal
 import pytz
 from logging import basicConfig, DEBUG, debug, exception
-import time
 
 
 DRIVERS_DIR                = "drivers"
@@ -105,51 +104,63 @@ class HistLog:
             log.write("\n".join(self.hist) + "\n")
 
 
-def change_to_top_dir(arg0):
+def __main(arg0, arg1):
+    # change to top dir
     dir_run_from = os.getcwd()
     top_dir = os.path.dirname(arg0)
     if top_dir and top_dir != dir_run_from:
         os.chdir(top_dir)
-def get_formatted_time(time_elapsed):
-    seconds = time_elapsed.seconds
-    minutes = seconds//60
-    seconds = seconds%60
-    formatted_time = "{0}:{1:>02d}:{2:>03d}".format(minutes, seconds, time_elapsed.microseconds//1000)
-    print("Elapsed time: {}".format(formatted_time))
-    return formatted_time
-    
 
 
+    if not os.path.exists(LOG_DIR):
+        os.makedirs(LOG_DIR)
+    hist_log = HistLog(os.path.join(LOG_DIR, HIST_LOG))
 
-if __name__ == "__main__":
-    ## daily mode
-    ## python BingRewards.py -d
-    if len(sys.argv) == 2:
-        assert sys.argv[1] == "-d"
+    # get credentials
+    try:
+        from src import config
+    except:
+        print("\nFailed to import configuration file")
+        basicConfig(level=DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
+        exception(hist_log.get_timestamp())
+        debug("")
+        raise
 
-        change_to_top_dir(sys.argv[0])
-        
-        if not os.path.exists(LOG_DIR):
-            os.mkdir(LOG_DIR)
-        hist_log = HistLog(os.path.join(LOG_DIR, HIST_LOG))
+    if not os.path.exists(DRIVERS_DIR):
+        os.mkdir(DRIVERS_DIR)
+    rewards = Rewards(os.path.join(DRIVERS_DIR, DRIVER), config.credentials["email"], config.credentials["password"], DEBUG, HEADLESS)
 
-        # get credentials
+
+    if arg1 in ["w", "web"]:
+        print("\n\t{}\n".format("You selected web search"))
+        completion = rewards.complete_web_search()
+        if not hist_log.get_completion().is_web_search_completed():
+            hist_log.write(completion)
+    elif arg1 in ["m", "mobile"]:
+        print("\n\t{}\n".format("You selected mobile search"))
+        completion = rewards.complete_mobile_search()
+        if not hist_log.get_completion().is_mobile_search_completed():
+            hist_log.write(completion)
+    elif arg1 in ["b", "both"]:
+        print("\n\t{}\n".format("You selected both searches"))
+        completion = rewards.complete_both_searches()
+        if not hist_log.get_completion().is_both_searches_completed():
+            hist_log.write(completion)
+    elif arg1 in ["o", "other"]:
+        print("\n\t{}\n".format("You selected offers"))
+        completion = rewards.complete_offers()
+        if not hist_log.get_completion().is_offers_completed():
+            hist_log.write(completion)
+    elif arg1 in ["a", "all"]:
+        print("\n\t{}\n".format("You selected all"))
+        completion = rewards.complete_all()
+        if not hist_log.get_completion().is_all_completed():
+            hist_log.write(completion)
+    else:
+        print("\n\t{}\n".format("You selected remianing"))
         try:
-            from src import config
-        except: # missing config file
-            basicConfig(level=DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
-            exception(hist_log.get_timestamp())
-            debug("")
-            quit()
-
-        if not os.path.exists(DRIVERS_DIR):
-            os.mkdir(DRIVERS_DIR)
-        rewards = Rewards(os.path.join(DRIVERS_DIR, DRIVER), config.credentials["email"], config.credentials["password"], DEBUG, HEADLESS)
-
-
-        completion = hist_log.get_completion()
-        if not completion.is_all_completed():
-            try:
+            completion = hist_log.get_completion()
+            if not completion.is_all_completed():
                 if not completion.is_any_completed():
                     completion = rewards.complete_all()
                 elif not completion.is_offers_completed():
@@ -157,78 +168,45 @@ if __name__ == "__main__":
                 elif not completion.is_any_searches_completed():
                     completion = rewards.complete_both_searches()
                 elif not completion.is_mobile_search_completed():
-                    rewards.complete_mobile_search()
+                    completion = rewards.complete_mobile_search()
                 else:
-                    rewards.complete_web_search()
-                
-            except:
-                basicConfig(level=DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
-                exception(hist_log.get_timestamp())
-                debug("")
-                quit()
+                    completion = rewards.complete_web_search()
+                hist_log.write(completion)
 
-            hist_log.write(completion)
-
-        else:
-            print("Already ran script")
-
-
-    ## interactive mode
-    ## python BingRewards.py
-    else:
-        change_to_top_dir(sys.argv[0])
-
-        input_message = "Enter \t{}, \n\t{}, \n\t{}, \n\t{}, \n\t{} \nInput: \t".format("w for web search", 
-                                                                                        "m for mobile search", 
-                                                                                        "b for both searches", 
-                                                                                        "o for offers", 
-                                                                                        "a for all (default)")
-        try:
-            arg = raw_input(input_message) # python 2
+            else:
+                print("Nothing to do")
         except:
-            arg = input(input_message) # python 3
-
-        # get credentials
-        try:
-            from src import config
-        except:
-            print("\n{}".format("Failed to import configuration file"))
-            time.sleep(1)
+            basicConfig(level=DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
+            exception(hist_log.get_timestamp())
+            debug("")
             raise
-        
-        if not os.path.exists(DRIVERS_DIR):
-            os.mkdir(DRIVERS_DIR)
-        rewards = Rewards(os.path.join(DRIVERS_DIR, DRIVER), config.credentials["email"], config.credentials["password"], DEBUG, HEADLESS)
     
 
-        if not os.path.exists(LOG_DIR):
-            os.makedirs(LOG_DIR)
-        hist_log = HistLog(os.path.join(LOG_DIR, HIST_LOG))
 
-        arg = arg.lower()
-        if arg == "w":
-            print("\n\t{}\n".format("You selected web search"))
-            completion = rewards.complete_web_search()
-            if not hist_log.get_completion().is_web_search_completed():
-                hist_log.write(completion)
-        elif arg == "m":
-            print("\n\t{}\n".format("You selected mobile search"))
-            completion = rewards.complete_mobile_search()
-            if not hist_log.get_completion().is_mobile_search_completed():
-                hist_log.write(completion)
-        elif arg == "b":
-            print("\n\t{}\n".format("You selected both searches"))
-            completion = rewards.complete_both_searches()
-            if not hist_log.get_completion().is_both_searches_completed():
-                hist_log.write(completion)
-        elif arg == "o":
-            print("\n\t{}\n".format("You selected offers"))
-            completion = rewards.complete_offers()
-            if not hist_log.get_completion().is_offers_completed():
-                hist_log.write(completion)
-        else:
-            print("\n\t{}\n".format("You selected all"))
-            completion = rewards.complete_all()
-            if not hist_log.get_completion().is_all_completed():
-                hist_log.write(completion)
+if __name__ == "__main__":
+    args = sys.argv
+    if len(args) == 1:
+        input_message = "Enter \t{}, \n\t{}, \n\t{}, \n\t{}, \n\t{}, \n\t{} \nInput: \t".format("w for web search", 
+                                                                                                "m for mobile search", 
+                                                                                                "b for both searches", 
+                                                                                                "o for offers", 
+                                                                                                "a for all",
+                                                                                                "r for remaining (default)")
+        try:
+            arg1 = raw_input(input_message) # python 2
+        except:
+            arg1 = input(input_message) # python 3
+        arg1 = arg1.lower()
+
+        __main(args[0], arg1)
+
+    elif len(args) == 2:
+        arg1 = args[1].lower()
+        assert arg1 in ["-w", "--web", "-m", "--mobile", "-b", "--both", "-o", "--offers", "-a", "-all", "-r", "--remaining", "-d"]
+
+        __main(args[0], arg1.replace("-", ""))
+
+    else:
+        print("Incorrect number of arguments")
+
 
