@@ -29,17 +29,20 @@ class Driver:
     __WEB_USER_AGENT            = "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.10240"
     __MOBILE_USER_AGENT         = "Mozilla/5.0 (Linux; Android 8.0; Pixel XL Build/OPP3.170518.006) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.0 Mobile Safari/537.36 EdgA/41.1.35.1"
 
-    __DRIVER_VERSION            = 2.35
-
 
     def __init__(self, path, device, headless):
         self.driver = self.__get_driver(path, device, headless)
 
     def __download_driver(self, driver_path, system):
+        # determine latest chromedriver version
+        response = urlopen("https://sites.google.com/a/chromium.org/chromedriver/downloads").read()
+        latest_version = max([float("{}.{}".format(version[0].decode(), version[1].decode())) 
+                              for version in re.findall(b"ChromeDriver (\d+).(\d+)", response)])
+
         if system == "Windows":
-            url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_win32.zip".format(self.__DRIVER_VERSION)
+            url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_win32.zip".format(latest_version)
         elif system == "Darwin":
-            url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_mac64.zip".format(self.__DRIVER_VERSION)
+            url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_mac64.zip".format(latest_version)
 
         response = urlopen(url, context=ssl.SSLContext(ssl.PROTOCOL_TLSv1)) # context args for mac
         zip_file_path = os.path.join(os.path.dirname(driver_path), os.path.basename(url))

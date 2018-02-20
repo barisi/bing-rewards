@@ -57,7 +57,7 @@ You may want to use your operating system's scheduler to run the script every ti
 
 These issues have been seen to be resolved running ChromeDriver outside of headless mode, however, at the time I have not provided a simple way to do this. Headless mode is a relatively new feature that allows Google Chrome to be launched in the background. Turning this feature off would interfere with the users daily routine. 
 
-Some of these bug fixes may also be roled out in newer builds. You can download the latest release from https://sites.google.com/a/chromium.org/chromedriver/downloads and place the extracted file in *__BingRewards/drivers/__*.
+Some of these bug fixes may also be roled out in newer builds. You can ensure you have the latest release by deleting the contents of *__BingRewards/drivers/__* and the most up-to-date driver will automatically be downloaded the next time you run the program. 
 
 ## Future Work
 - ~~Utilize Microsoft Edge's web driver to earn additional points.~~ (Solved with user agents!)
