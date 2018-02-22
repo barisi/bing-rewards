@@ -186,9 +186,9 @@ def __main(arg0, arg1):
 if __name__ == "__main__":
     args = sys.argv
     if len(args) == 1:
-        input_message = "Enter \t{}, \n\t{}, \n\t{}, \n\t{}, \n\t{}, \n\t{} \nInput: \t".format("w for web search", 
-                                                                                                "m for mobile search", 
-                                                                                                "b for both searches", 
+        input_message = "Enter \t{}, \n\t{}, \n\t{}, \n\t{}, \n\t{}, \n\t{} \nInput: \t".format("w for web", 
+                                                                                                "m for mobile", 
+                                                                                                "b for both", 
                                                                                                 "o for offers", 
                                                                                                 "a for all",
                                                                                                 "r for remaining (default)")
