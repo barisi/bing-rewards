@@ -7,7 +7,6 @@ except ImportError: # python 2
 import ssl
 import zipfile
 from selenium import webdriver
-#from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -94,7 +93,6 @@ class Driver:
             self.driver.switch_to.window(handle)
             self.driver.close()
 
-
 class Completion:
     def __init__(self):
         self.web_search         = False
@@ -120,7 +118,6 @@ class Completion:
         self.web_search = max(self.web_search, completion.web_search)
         self.mobile_search = max(self.mobile_search, completion.mobile_search)
         self.offers = max(self.offers, completion.offers)
-
 
 class Rewards:
     __LOGIN_URL                 = "https://login.live.com"
@@ -343,7 +340,6 @@ class Rewards:
                 if current_progress != prev_progress: # new question
                     incorrect_options = []
                     prev_progress =  current_progress
-                    self.__handle_alerts(driver)
                 else:
                     # update incorrect options
                     incorrect_options.append((from_option_index, to_option_index))
@@ -359,7 +355,8 @@ class Rewards:
                         from_option = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, "rqAnswerOption{0}".format(from_option_index))))
                         to_option = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, "rqAnswerOption{0}".format(to_option_index))))
                         ActionChains(driver).drag_and_drop(from_option, to_option).perform()
-                        time.sleep(2)
+                        time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
+                        self.__handle_alerts(driver)
 
                         if current_progress == complete_progress-1: # last question
                             try:
@@ -392,10 +389,11 @@ class Rewards:
                     self.__sys_out_progress(current_progress, complete_progress, 4)
                     if current_progress != prev_progress:
                         prev_progress = current_progress
-                        self.__handle_alerts(driver)
 
                 try:
                     WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.element_to_be_clickable((By.ID, "rqAnswerOption{0}".format(option_index)))).click()
+                    time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
+                    self.__handle_alerts(driver)
 
                     if current_progress == complete_progress-1: # last question
                         try:

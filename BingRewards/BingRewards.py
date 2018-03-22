@@ -2,9 +2,8 @@ import sys
 import os
 from src.driver import Rewards, Completion
 from datetime import datetime, timedelta
-from dateutil.tz import tzlocal
-import pytz
-from logging import basicConfig, DEBUG, debug, exception
+from dateutil import tz
+import logging
 
 
 DRIVERS_DIR                = "drivers"
@@ -20,10 +19,10 @@ HEADLESS                   = True
 
 
 class HistLog:
-    __DATETIME_FORMAT      = "%A, %B %d %Y %I:%M%p %Z"
+    __DATETIME_FORMAT      = "%a, %b %d %Y %I:%M%p %Z"
 
-    __LOCAL_TIMEZONE       = tzlocal()
-    __PST_TIMEZONE         = pytz.timezone("US/Pacific")
+    __LOCAL_TIMEZONE       = tz.tzlocal()
+    __PST_TIMEZONE         = tz.gettz("US/Alaska") # Alaska timezone, guards against Pacific Daylight Savings Time
 
     __RESET_HOUR           = 0  # AM PST
     __MAX_HIST_LEN         = 30 # days
@@ -121,9 +120,9 @@ def __main(arg0, arg1):
         from src import config
     except:
         print("\nFailed to import configuration file")
-        basicConfig(level=DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
-        exception(hist_log.get_timestamp())
-        debug("")
+        logging.basicConfig(level=logging.DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
+        logging.exception(hist_log.get_timestamp())
+        logging.debug("")
         raise
 
     if not os.path.exists(DRIVERS_DIR):
@@ -176,9 +175,9 @@ def __main(arg0, arg1):
             else:
                 print("Nothing to do")
         except:
-            basicConfig(level=DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
-            exception(hist_log.get_timestamp())
-            debug("")
+            logging.basicConfig(level=logging.DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
+            logging.exception(hist_log.get_timestamp())
+            logging.debug("")
             raise
     
 
@@ -202,7 +201,7 @@ if __name__ == "__main__":
 
     elif len(args) == 2:
         arg1 = args[1].lower()
-        assert arg1 in ["-w", "--web", "-m", "--mobile", "-b", "--both", "-o", "--offers", "-a", "-all", "-r", "--remaining", "-d"]
+        assert arg1 in ["-w", "--web", "-m", "--mobile", "-b", "--both", "-o", "--offers", "-a", "-all", "-r", "--remaining"]
 
         __main(args[0], arg1.replace("-", ""))
 
