@@ -19,6 +19,11 @@ import re
 import random
 
 
+## TODO
+#
+#  search/define actual terms
+#   
+
 
 class Driver:
     WEB_DEVICE                  = 0
@@ -76,6 +81,8 @@ class Driver:
         options.add_argument("--log-level=3")
         if headless:
             options.add_argument("--headless")
+        #else:
+        #    options.add_argument("--window-position=-2000,0") # doesnt move off screen
         
         if device == self.WEB_DEVICE:
             options.add_argument("user-agent=" + self.__WEB_USER_AGENT)
@@ -83,8 +90,8 @@ class Driver:
             options.add_argument("user-agent=" + self.__MOBILE_USER_AGENT)
         
         driver = webdriver.Chrome(path, chrome_options=options)
-        #if not headless:
-        #    driver.set_window_position(-2000, 0)
+        if not headless:
+            driver.set_window_position(-2000, 0)
         return driver
 
     def close(self):
@@ -239,7 +246,7 @@ class Rewards:
             search_box = driver.find_element_by_id("sb_form_q")
             search_box.clear()
             search_box.send_keys(str(time.time()*10000000), Keys.RETURN) # unique search term
-            #time.sleep(random.uniform(0, 5)) # avoid getting flagged as a bot
+            time.sleep(random.uniform(0, 5)) # sleep for a few seconds
 
         self.__sys_out("Completed searching", 2, True, True)
         return True
@@ -272,28 +279,34 @@ class Rewards:
             except:
                 try_count += 1
                 if try_count == 4:
-                    break
+                    self.__sys_out("Failed to start quiz", 3, True)
+                    return False
                 time.sleep(1)
 
-        if driver.find_element_by_id("rqStartQuiz").is_displayed():
-            try_count = 0
-            while True:
-                start_quiz = driver.find_element_by_id("rqStartQuiz")
-                if start_quiz.is_displayed():
-                    try:
-                        start_quiz.click()
-                    except:
-                        driver.refresh()
-                else:
-                    try:
-                        if driver.find_element_by_id("quizWelcomeContainer").get_attribute("style") == "display: none;":
-                            break
-                    except: 
-                        driver.refresh()
-                try_count += 1
-                if try_count == 4:
-                    break
-        else:
+        try:
+            start_quiz = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.ID, 'rqStartQuiz')))
+            if start_quiz.is_displayed():
+                try_count = 0
+                while True:
+                    start_quiz = driver.find_element_by_id("rqStartQuiz")
+                    if start_quiz.is_displayed():
+                        try:
+                            start_quiz.click()
+                        except:
+                            driver.refresh()
+                    else:
+                        try:
+                            if driver.find_element_by_id("quizWelcomeContainer").get_attribute("style") == "display: none;":
+                                break
+                        except: 
+                            driver.refresh()
+
+                    try_count += 1
+                    if try_count == 4:
+                        self.__sys_out("Failed to start quiz", 3, True)
+                        return False
+                    time.sleep(1)
+        except:
             self.__sys_out("Already started quiz", 4)
 
         quiz_options_len = 4
@@ -415,12 +428,35 @@ class Rewards:
         self.__sys_out("Successfully completed quiz", 3, True, True)
         return True
 
+    def __quiz2(self, driver):
+        self.__sys_out("Starting quiz (new)", 3)
+
+        current_progress = 0
+        while True:
+            try:
+                progress = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, "FooterText{}".format(current_progress)))).text
+                current_progress, complete_progress = [int(x) for x in re.match("\((\d+) of (\d+)\)", progress).groups()]
+                self.__sys_out_progress(current_progress-1, complete_progress, 4)
+
+                driver.find_element_by_xpath('//*[@id="QuestionPane{}"]/div[1]/div[2]/div[1]'.format(current_progress-1)).click() # correct answer not required
+                WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.element_to_be_clickable((By.ID, "check"))).click()
+
+                if current_progress == complete_progress:
+                    self.__sys_out_progress(current_progress, complete_progress, 4)
+                    break
+            except:
+                self.__sys_out("Failed to complete quiz", 3, True, True)
+                return False
+
+        self.__sys_out("Successfully completed quiz", 3, True, True)
+        return True
+
     def __handle_alerts(self, driver):
         try:
             driver.switch_to.alert.dismiss()
         except:
             pass
-    def __click_offer(self, driver, offer, title_xpath, checked_xpath, checked_class):
+    def __click_offer(self, driver, offer, title_xpath, checked_xpath, details_xpath):
         title = offer.find_element_by_xpath(title_xpath).text
         self.__sys_out("Trying {0}".format(title), 2)
 
@@ -428,22 +464,25 @@ class Rewards:
         checked = False
         try:
             icon = offer.find_element_by_xpath(checked_xpath)
-            if icon.get_attribute('class') == checked_class:
+            if icon.get_attribute('class') == "mee-icon mee-icon-SkypeCircleCheck ng-scope":
                 checked = True
                 self.__sys_out("Already checked", 2, True)
         except:
-            pass
+            self.__sys_out("Assuming not already checked", 2)
 
         completed = True
         if not checked:
+            details = offer.find_element_by_xpath(details_xpath).text
+
             offer.click()
             #driver.execute_script('''window.open("{0}","_blank");'''.format(offer.get_attribute("href")))
             driver.switch_to.window(driver.window_handles[-1])
-        
             self.__handle_alerts(driver)
 
             if "quiz" in title.lower():
                 completed = self.__quiz(driver)
+            elif "quiz" in details.lower():
+                completed = self.__quiz2(driver)
             else:
                 time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
             if completed:
@@ -463,7 +502,7 @@ class Rewards:
         ## daily set
         for i in range(3):
             offer = driver.find_element_by_xpath('//*[@id="daily-sets"]/mee-rewards-card-placement[1]/div/div/div[{}]/{}/mee-rewards-daily-sets-item/mee-rewards-card/div/div'.format(1 if i == 0 else 2, 'item{}'.format(i) if i == 0 else 'div[{0}]/item{0}'.format(i)))
-            c = self.__click_offer(driver, offer, './section/div/div[2]/h3', './section/div/div[2]/mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+            c = self.__click_offer(driver, offer, './section/div/div[2]/h3', './section/div/div[2]/mee-rewards-points/div/div/span[1]', './section/div/div[2]/p')
             completed.append(c)
         ## more activities
         item_num = 0
@@ -472,7 +511,7 @@ class Rewards:
             # if offer takes up 2 spaces length wise
             try:
                 offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, item_num))
-                c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[2]/p')
                 completed.append(c)
                 i += 1
                 item_num += 1
@@ -480,15 +519,12 @@ class Rewards:
                 # if offer takes up 1 space
                 try:
                     offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, (i%2)+1, item_num))
-                    c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
+                    c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[2]/p')
                     completed.append(c)
                     item_num += 1
                 # if offer takes up 4 spaces (length 2, width 2)
                 except:
                     pass
-            #offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, (i%2)+1, i))
-            #c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', "mee-icon mee-icon-SkypeCircleCheck ng-scope")
-            #completed.append(c)
             i += 1
 
         return min(completed)
