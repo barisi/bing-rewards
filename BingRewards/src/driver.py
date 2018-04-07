@@ -39,7 +39,7 @@ class Driver:
 
     def __download_driver(self, driver_path, system):
         # determine latest chromedriver version
-        response = urlopen("https://sites.google.com/a/chromium.org/chromedriver/downloads").read()
+        response = urlopen("https://sites.google.com/a/chromium.org/chromedriver/downloads", context=ssl.SSLContext(ssl.PROTOCOL_TLSv1)).read()
         latest_version = max([float("{}.{}".format(version[0].decode(), version[1].decode())) 
                               for version in re.findall(b"ChromeDriver (\d+).(\d+)", response)])
 
@@ -145,7 +145,7 @@ class Rewards:
         self.password           = password
         self.debug              = debug
         self.headless           = headless
-        self.__completion       = Completion()
+        self.completion         = Completion()
 
 
     def __get_sys_out_prefix(self, lvl, end):
@@ -399,9 +399,14 @@ class Rewards:
             while True:
                 current_progress, complete_progress = self.__get_quiz_progress(driver)
                 if complete_progress > 0:
-                    self.__sys_out_progress(current_progress, complete_progress, 4)
                     if current_progress != prev_progress:
+                        self.__sys_out_progress(current_progress, complete_progress, 4)
                         prev_progress = current_progress
+                    else:
+                        try_count += 1
+                        if try_count == 4:
+                            self.__sys_out("Failed to complete quiz", 3, True, True)
+                            return False
 
                 try:
                     WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.element_to_be_clickable((By.ID, "rqAnswerOption{0}".format(option_index)))).click()
@@ -501,31 +506,44 @@ class Rewards:
         completed = []
         ## daily set
         for i in range(3):
-            offer = driver.find_element_by_xpath('//*[@id="daily-sets"]/mee-rewards-card-placement[1]/div/div/div[{}]/{}/mee-rewards-daily-sets-item/mee-rewards-card/div/div'.format(1 if i == 0 else 2, 'item{}'.format(i) if i == 0 else 'div[{0}]/item{0}'.format(i)))
-            c = self.__click_offer(driver, offer, './section/div/div[2]/h3', './section/div/div[2]/mee-rewards-points/div/div/span[1]', './section/div/div[2]/p')
+            #offer = driver.find_element_by_xpath('//*[@id="daily-sets"]/mee-rewards-card-placement[1]/div/div/div[{}]/{}/mee-rewards-daily-sets-item/mee-rewards-card/div/div'.format(1 if i == 0 else 2, 'item{}'.format(i) if i == 0 else 'div[{0}]/item{0}'.format(i)))
+            #c = self.__click_offer(driver, offer, './section/div/div[2]/h3', './section/div/div[2]/mee-rewards-points/div/div/span[1]', './section/div/div[2]/p')
+            offer = driver.find_element_by_xpath('//*[@id="daily-sets"]/mee-card-group[1]/div/mee-card[{}]/div/card-content/mee-rewards-daily-set-item-content/div'.format(i+1))
+            c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[2]', './div[2]/p')
             completed.append(c)
-        ## more activities
-        item_num = 0
-        i = 0
-        while i < 8:
-            # if offer takes up 2 spaces length wise
+
+        ### more activities
+        #item_num = 0
+        #i = 0
+        #while i < 8:
+        #    # if offer takes up 2 spaces length wise
+        #    try:
+        #        offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, item_num))
+        #        c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[2]/p')
+        #        completed.append(c)
+        #        i += 1
+        #        item_num += 1
+        #    except:
+        #        # if offer takes up 1 space
+        #        try:
+        #            offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, (i%2)+1, item_num))
+        #            c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[2]/p')
+        #            completed.append(c)
+        #            item_num += 1
+        #        # if offer takes up 4 spaces (length 2, width 2)
+        #        except:
+        #            pass
+        #    i += 1
+
+        for i in range(8):
             try:
-                offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, item_num))
+                offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/mee-card[{}]/div/card-content/mee-rewards-more-activities-card-item/div'.format(i+1))
                 c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[2]/p')
                 completed.append(c)
                 i += 1
                 item_num += 1
             except:
-                # if offer takes up 1 space
-                try:
-                    offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/div/div[{}]/div[{}]/item{}/mee-rewards-more-activities-item/mee-mosaic-item/div/section/div'.format(int(i/2)+1, (i%2)+1, item_num))
-                    c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[2]/p')
-                    completed.append(c)
-                    item_num += 1
-                # if offer takes up 4 spaces (length 2, width 2)
-                except:
-                    pass
-            i += 1
+                pass
 
         return min(completed)
 
@@ -536,8 +554,8 @@ class Rewards:
             web_driver = Driver(self.path, Driver.WEB_DEVICE, self.headless)
             self.__login(web_driver.driver)
         
-            self.__completion.web_search = self.__search(web_driver.driver, Driver.WEB_DEVICE)
-            if self.__completion.web_search:
+            self.completion.web_search = self.__search(web_driver.driver, Driver.WEB_DEVICE)
+            if self.completion.web_search:
                 self.__sys_out("Successfully completed web search", 1, True)
             else:
                 self.__sys_out("Failed to complete web search", 1, True)
@@ -559,8 +577,8 @@ class Rewards:
             mobile_driver = Driver(self.path, Driver.MOBILE_DEVICE, self.headless)
             self.__login(mobile_driver.driver)
     
-            self.__completion.mobile_search = self.__search(mobile_driver.driver, Driver.MOBILE_DEVICE)
-            if self.__completion.mobile_search:
+            self.completion.mobile_search = self.__search(mobile_driver.driver, Driver.MOBILE_DEVICE)
+            if self.completion.mobile_search:
                 self.__sys_out("Successfully completed mobile search", 1, True)
             else:
                 self.__sys_out("Failed to complete mobile search", 1, True)
@@ -583,8 +601,8 @@ class Rewards:
                 driver = Driver(self.path, Driver.MOBILE_DEVICE, self.headless)
                 self.__login(driver.driver)
         
-            self.__completion.offers = self.__offers(driver.driver)
-            if self.__completion.offers:
+            self.completion.offers = self.__offers(driver.driver)
+            if self.completion.offers:
                 self.__sys_out("Successfully completed offers", 1, True)
             else:
                 self.__sys_out("Failed to complete offers", 1, True)
@@ -599,21 +617,21 @@ class Rewards:
 
     def complete_mobile_search(self): 
         self.__complete_mobile_search()
-        return self.__completion
+        return self.completion
     def complete_web_search(self):
         self.__complete_web_search()
-        return self.__completion
+        return self.completion
     def complete_both_searches(self):
         self.__complete_web_search()
         self.__complete_mobile_search()
-        return self.__completion
+        return self.completion
     def complete_offers(self):
         self.__complete_offers()
-        return self.__completion
+        return self.completion
     def complete_all(self):
         self.__complete_web_search()
         mobile_driver = self.__complete_mobile_search(close=False)
         self.__complete_offers(mobile_driver)
-        return self.__completion
+        return self.completion
 
 

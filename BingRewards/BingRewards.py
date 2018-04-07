@@ -178,6 +178,8 @@ def __main(arg0, arg1):
             logging.basicConfig(level=logging.DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
             logging.exception(hist_log.get_timestamp())
             logging.debug("")
+
+            hist_log.write(rewards.completion)
             raise
     
 
