@@ -280,28 +280,27 @@ class Rewards:
                 time.sleep(1)
 
         try:
-            start_quiz = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.ID, 'rqStartQuiz')))
-            if start_quiz.is_displayed():
-                try_count = 0
-                while True:
-                    start_quiz = driver.find_element_by_id("rqStartQuiz")
-                    if start_quiz.is_displayed():
-                        try:
-                            start_quiz.click()
-                        except:
-                            driver.refresh()
-                    else:
-                        try:
-                            if driver.find_element_by_id("quizWelcomeContainer").get_attribute("style") == "display: none;":
-                                break
-                        except: 
-                            driver.refresh()
+            try_count = 0
+            while True:
+                start_quiz = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.ID, 'rqStartQuiz')))
+                if start_quiz.is_displayed():
+                    try:
+                        start_quiz.click()
+                    except:
+                        driver.refresh()
+                else:
+                    try:
+                        if driver.find_element_by_id("quizWelcomeContainer").get_attribute("style") == "display: none;": # started
+                            self.__sys_out("Successfully started quiz", 3, True)
+                            break
+                    except: 
+                        driver.refresh()
 
-                    try_count += 1
-                    if try_count == 4:
-                        self.__sys_out("Failed to start quiz", 3, True)
-                        return False
-                    time.sleep(1)
+                try_count += 1
+                if try_count == 4:
+                    self.__sys_out("Failed to start quiz", 3, True)
+                    return False
+                time.sleep(1)
         except:
             self.__sys_out("Already started quiz", 3, True)
 
