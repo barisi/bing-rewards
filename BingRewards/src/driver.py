@@ -399,6 +399,7 @@ class Rewards:
             prev_progress = -1
             prev_options = []
             try_count = 0
+            prev_complete_progress = 0 # complete progress becomes 0 at end of quiz, for printing purposes
             while True:
                 current_progress, complete_progress = self.__get_quiz_progress(driver)
                 if complete_progress > 0:
@@ -407,19 +408,23 @@ class Rewards:
                         prev_progress = current_progress
                         prev_options = []
                         try_count = 0
+                        prev_complete_progress = complete_progress
                 else:
                     try_count += 1
                     if try_count == quiz_options_len:
                         self.__sys_out("Failed to complete quiz - no progress", 3, True, True)
                         return False
 
-                if current_progress == complete_progress-1: # last question, works for -1, 0 too
+                if current_progress == complete_progress-1: # last question, works for -1, 0 too (already complete)
                     try:
                         header = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="quizCompleteContainer"]/span/div[1]')))
                         if header.text == "Way to go!":
-                            if complete_progress > 0:
-                                self.__sys_out_progress(complete_progress, complete_progress, 4)
-                            break
+                            if prev_complete_progress > 0:
+                                self.__sys_out_progress(prev_complete_progress, prev_complete_progress, 4)
+                                break
+                            else:
+                                self.__sys_out("Already completed quiz", 3, True)
+                                return True
                     except:
                         pass
 
@@ -517,7 +522,7 @@ class Rewards:
             #offer = driver.find_element_by_xpath('//*[@id="daily-sets"]/mee-rewards-card-placement[1]/div/div/div[{}]/{}/mee-rewards-daily-sets-item/mee-rewards-card/div/div'.format(1 if i == 0 else 2, 'item{}'.format(i) if i == 0 else 'div[{0}]/item{0}'.format(i)))
             #c = self.__click_offer(driver, offer, './section/div/div[2]/h3', './section/div/div[2]/mee-rewards-points/div/div/span[1]', './section/div/div[2]/p')
             offer = driver.find_element_by_xpath('//*[@id="daily-sets"]/mee-card-group[1]/div/mee-card[{}]/div/card-content/mee-rewards-daily-set-item-content/div'.format(i+1))
-            c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[2]', './div[2]/p')
+            c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[2]/p')
             completed.append(c)
 
         ### more activities
