@@ -248,7 +248,7 @@ class Rewards:
             search_box.send_keys(str(time.time()*10000000), Keys.RETURN) # unique search term
             time.sleep(random.uniform(0, 5)) # sleep for a few seconds
 
-        self.__sys_out("Completed searching", 2, True, True)
+        self.__sys_out("Successfully completed search", 2, True, True)
         return True
 
     def __get_quiz_progress(self, driver, try_count=0):
@@ -266,11 +266,7 @@ class Rewards:
                 return self.__get_quiz_progress(driver, try_count+1)
             else:
                 return 0, -1
-    def __quiz(self, driver):
-        self.__sys_out("Starting quiz", 3)
-
-
-        ## start quiz
+    def __start_quiz(self, driver):
         try_count = 0
         while True:
             try:
@@ -279,7 +275,7 @@ class Rewards:
             except:
                 try_count += 1
                 if try_count == 4:
-                    self.__sys_out("Failed to start quiz", 3, True)
+                    self.__sys_out("Failed to start quiz - could not detect quiz overlay", 3, True)
                     return False
                 time.sleep(1)
 
@@ -307,19 +303,26 @@ class Rewards:
                         return False
                     time.sleep(1)
         except:
-            self.__sys_out("Already started quiz", 4)
+            self.__sys_out("Already started quiz", 3, True)
+
+        return True
+    def __quiz(self, driver):
+        self.__sys_out("Starting quiz", 3)
+
+        started = self.__start_quiz(driver)
+        if not started:
+            return started
+
 
         quiz_options_len = 4
-
-
 
         is_drag_and_drop = False
         try:
             WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.ID, 'rqAnswerOptionNum0')))
             is_drag_and_drop = True
-            self.__sys_out("Drag and drop", 4)
+            self.__sys_out("Drag and drop", 3)
         except:
-            self.__sys_out("Multiple choice", 4)
+            self.__sys_out("Multiple choice", 3)
 
 
         ## drag and drop
@@ -384,7 +387,7 @@ class Rewards:
                         break
                 
                 if exit_code == -1: 
-                    self.__sys_out("Failed to complete quiz", 3, True, True)
+                    self.__sys_out("Failed to complete quiz - tried every choice", 3, True, True)
                     return False
                 elif exit_code == 0:
                     break
@@ -393,41 +396,46 @@ class Rewards:
 
         ## multiple choice
         else:
-            option_index = 0
-            try_count = 0
             prev_progress = -1
+            prev_options = []
+            try_count = 0
             while True:
                 current_progress, complete_progress = self.__get_quiz_progress(driver)
                 if complete_progress > 0:
                     if current_progress != prev_progress:
                         self.__sys_out_progress(current_progress, complete_progress, 4)
                         prev_progress = current_progress
-                    else:
-                        try_count += 1
-                        if try_count == 4:
-                            self.__sys_out("Failed to complete quiz", 3, True, True)
-                            return False
-
-                try:
-                    WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.element_to_be_clickable((By.ID, "rqAnswerOption{0}".format(option_index)))).click()
-                    time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
-                    self.__handle_alerts(driver)
-
-                    if current_progress == complete_progress-1: # last question
-                        try:
-                            header = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="quizCompleteContainer"]/span/div[1]')))
-                            if header.text == "Way to go!":
-                                self.__sys_out_progress(complete_progress, complete_progress, 4)
-                                break
-                        except:
-                            pass
-                    option_index = 0
-
-                except: # option was not clickable = already clicked
-                    option_index += 1
-                    if option_index == quiz_options_len:
-                        self.__sys_out("Failed to complete quiz", 3, True, True)
+                        prev_options = []
+                        try_count = 0
+                else:
+                    try_count += 1
+                    if try_count == quiz_options_len:
+                        self.__sys_out("Failed to complete quiz - no progress", 3, True, True)
                         return False
+
+                if current_progress == complete_progress-1: # last question, works for -1, 0 too
+                    try:
+                        header = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="quizCompleteContainer"]/span/div[1]')))
+                        if header.text == "Way to go!":
+                            if complete_progress > 0:
+                                self.__sys_out_progress(complete_progress, complete_progress, 4)
+                            break
+                    except:
+                        pass
+
+                # select choice
+                for option_index in range(quiz_options_len):
+                    if option_index not in prev_options:
+                        break
+                if option_index in prev_options:
+                    self.__sys_out("Failed to complete quiz - tried every choice", 3, True, True)
+                    return False
+
+                # click choice
+                WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.element_to_be_clickable((By.ID, "rqAnswerOption{0}".format(option_index)))).click()
+                prev_options.append(option_index)
+                time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
+                self.__handle_alerts(driver)
 
 
         self.__sys_out("Successfully completed quiz", 3, True, True)
@@ -469,11 +477,11 @@ class Rewards:
         checked = False
         try:
             icon = offer.find_element_by_xpath(checked_xpath)
-            if icon.get_attribute('class') == "mee-icon mee-icon-SkypeCircleCheck ng-scope":
+            if icon.get_attribute('class').startswith("mee-icon mee-icon-SkypeCircleCheck ng-scope"):
                 checked = True
                 self.__sys_out("Already checked", 2, True)
         except:
-            self.__sys_out("Assuming not already checked", 2)
+            self.__sys_out("Assuming not already checked", 3)
 
         completed = True
         if not checked:
