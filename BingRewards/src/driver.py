@@ -79,6 +79,7 @@ class Driver:
         options.add_argument("--disable-extensions")
         options.add_argument("--window-size=1280,1024")
         options.add_argument("--log-level=3")
+        options.add_experimental_option("prefs", {"profile.default_content_setting_values.geolocation" : 2}) # geolocation permission, 0=Ask, 1=Allow, 2=Deny
         if headless:
             options.add_argument("--headless")
         #else:
@@ -371,7 +372,7 @@ class Rewards:
                         to_option = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, "rqAnswerOption{0}".format(to_option_index))))
                         ActionChains(driver).drag_and_drop(from_option, to_option).perform()
                         time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
-                        self.__handle_alerts(driver)
+                        #self.__handle_alerts(driver)
 
                         if current_progress == complete_progress-1: # last question
                             try:
@@ -439,7 +440,7 @@ class Rewards:
                 WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.element_to_be_clickable((By.ID, "rqAnswerOption{0}".format(option_index)))).click()
                 prev_options.append(option_index)
                 time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
-                self.__handle_alerts(driver)
+                #self.__handle_alerts(driver)
 
 
         self.__sys_out("Successfully completed quiz", 3, True, True)
@@ -494,7 +495,7 @@ class Rewards:
             offer.click()
             #driver.execute_script('''window.open("{0}","_blank");'''.format(offer.get_attribute("href")))
             driver.switch_to.window(driver.window_handles[-1])
-            self.__handle_alerts(driver)
+            #self.__handle_alerts(driver)
 
             if "quiz" in title.lower():
                 completed = self.__quiz(driver)
