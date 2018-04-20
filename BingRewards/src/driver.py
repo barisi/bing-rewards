@@ -147,6 +147,7 @@ class Rewards:
         self.debug              = debug
         self.headless           = headless
         self.completion         = Completion()
+        self.stdout             = []
 
 
     def __get_sys_out_prefix(self, lvl, end):
@@ -159,15 +160,25 @@ class Rewards:
         if self.debug:
             if flush: # because of progress bar
                 print("")
-            print("{0}{1}{2}".format(self.__get_sys_out_prefix(lvl, end), msg, "\n" if lvl==1 and end else ""))
+            out = "{0}{1}{2}".format(self.__get_sys_out_prefix(lvl, end), msg, "\n" if lvl==1 and end else "")
+            print(out)
+            if len(self.stdout) > 0:
+                if self.stdout[-1].startswith("\r"):
+                    self.stdout[-1] = self.stdout[-1][2:]
+            self.stdout.append(out)
     def __sys_out_progress(self, current_progress, complete_progress, lvl):
         if self.debug:
             ratio = float(current_progress)/complete_progress
             current_bars = int(ratio*self.__SYS_OUT_PROGRESS_BAR_LEN)
             needed_bars = self.__SYS_OUT_PROGRESS_BAR_LEN-current_bars
-            sys.stdout.write("\r{0}Progress: [{1}] {2}/{3} ({4}%)".format(self.__get_sys_out_prefix(lvl, False), "#"*current_bars + " "*needed_bars, 
-                                                                          current_progress, complete_progress, int(ratio*100)))
+            out = "\r{0}Progress: [{1}] {2}/{3} ({4}%)".format(self.__get_sys_out_prefix(lvl, False), "#"*current_bars + " "*needed_bars, 
+                                                               current_progress, complete_progress, int(ratio*100))
+            sys.stdout.write(out)
             sys.stdout.flush()
+            if self.stdout[-1].startswith("\r"): # dont need to check size of array before accessing element because progress never comes first
+                self.stdout[-1] = out
+            else:
+                self.stdout.append(out)
     
     def __login(self, driver):
         self.__sys_out("Logging in", 2)
@@ -630,21 +641,19 @@ class Rewards:
 
     def complete_mobile_search(self): 
         self.__complete_mobile_search()
-        return self.completion
     def complete_web_search(self):
         self.__complete_web_search()
-        return self.completion
     def complete_both_searches(self):
         self.__complete_web_search()
         self.__complete_mobile_search()
-        return self.completion
     def complete_offers(self):
         self.__complete_offers()
-        return self.completion
     def complete_all(self):
         self.__complete_web_search()
         mobile_driver = self.__complete_mobile_search(close=False)
         self.__complete_offers(mobile_driver)
-        return self.completion
+    def complete_mobile_search_and_offers(self):
+        mobile_driver = self.__complete_mobile_search(close=False)
+        self.__complete_offers(mobile_driver)
 
 

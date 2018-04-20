@@ -86,10 +86,14 @@ class HistLog:
         if not self.__completion.is_all_completed():
             if not self.__completion.is_any_completed():
                 failed = "{}, {} & {}".format(self.__WEB_SEARCH_OPTION, self.__MOBILE_SEARCH_OPTION, self.__OFFERS_OPTION)
-            elif not self.__completion.is_offers_completed():
-                failed = "{}".format(self.__OFFERS_OPTION)
             elif not self.__completion.is_any_searches_completed():
                 failed = "{} & {}".format(self.__WEB_SEARCH_OPTION, self.__MOBILE_SEARCH_OPTION)
+            elif not self.__completion.is_web_search_completed() and not self.__completion.is_offers_completed():
+                failed = "{} & {}".format(self.__WEB_SEARCH_OPTION, self.__OFFERS_OPTION)
+            elif not self.__completion.is_mobile_search_completed() and not self.__completion.is_offers_completed():
+                failed = "{} & {}".format(self.__MOBILE_SEARCH_OPTION, self.__OFFERS_OPTION)
+            elif not self.__completion.is_offers_completed():
+                failed = "{}".format(self.__OFFERS_OPTION)
             elif not self.__completion.is_mobile_search_completed():
                 failed = "{}".format(self.__MOBILE_SEARCH_OPTION)
             else:
@@ -132,45 +136,58 @@ def __main(arg0, arg1):
 
     if arg1 in ["w", "web"]:
         print("\n\t{}\n".format("You selected web search"))
-        completion = rewards.complete_web_search()
+        rewards.complete_web_search()
         if not hist_log.get_completion().is_web_search_completed():
-            hist_log.write(completion)
+            hist_log.write(rewards.completion)
     elif arg1 in ["m", "mobile"]:
         print("\n\t{}\n".format("You selected mobile search"))
-        completion = rewards.complete_mobile_search()
+        rewards.complete_mobile_search()
         if not hist_log.get_completion().is_mobile_search_completed():
-            hist_log.write(completion)
+            hist_log.write(rewards.completion)
     elif arg1 in ["b", "both"]:
         print("\n\t{}\n".format("You selected both searches"))
-        completion = rewards.complete_both_searches()
+        rewards.complete_both_searches()
         if not hist_log.get_completion().is_both_searches_completed():
-            hist_log.write(completion)
+            hist_log.write(rewards.completion)
     elif arg1 in ["o", "other"]:
         print("\n\t{}\n".format("You selected offers"))
-        completion = rewards.complete_offers()
+        rewards.complete_offers()
         if not hist_log.get_completion().is_offers_completed():
-            hist_log.write(completion)
+            hist_log.write(rewards.completion)
     elif arg1 in ["a", "all"]:
         print("\n\t{}\n".format("You selected all"))
-        completion = rewards.complete_all()
+        rewards.complete_all()
         if not hist_log.get_completion().is_all_completed():
-            hist_log.write(completion)
+            hist_log.write(rewards.completion)
     else:
         print("\n\t{}\n".format("You selected remianing"))
         try:
             completion = hist_log.get_completion()
             if not completion.is_all_completed():
                 if not completion.is_any_completed():
-                    completion = rewards.complete_all()
-                elif not completion.is_offers_completed():
-                    completion = rewards.complete_offers()
+                    rewards.complete_all()
                 elif not completion.is_any_searches_completed():
-                    completion = rewards.complete_both_searches()
+                    rewards.complete_both_searches()
+                elif not completion.is_web_search_completed() and not completion.is_offers_completed():
+                    rewards.complete_web_search()
+                    rewards.complete_offers()
+                elif not completion.is_mobile_search_completed() and not completion.is_offers_completed():
+                    rewards.complete_mobile_search_and_offers()
+                elif not completion.is_offers_completed():
+                    rewards.complete_offers()
                 elif not completion.is_mobile_search_completed():
-                    completion = rewards.complete_mobile_search()
+                    rewards.complete_mobile_search()
                 else:
-                    completion = rewards.complete_web_search()
-                hist_log.write(completion)
+                    rewards.complete_web_search()
+                hist_log.write(rewards.completion)
+
+                completion = hist_log.get_completion()
+                if not completion.is_all_completed(): # check again, log if any failed
+                    logging.basicConfig(level=logging.DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
+                    logging.debug(hist_log.get_timestamp())
+                    for line in rewards.stdout:
+                        logging.debug(line)
+                    logging.debug("")
 
             else:
                 print("Nothing to do")
