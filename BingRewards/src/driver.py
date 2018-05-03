@@ -265,7 +265,8 @@ class Rewards:
 
     def __get_quiz_progress(self, driver, try_count=0):
         try:
-            questions = driver.find_elements_by_xpath('//*[@id="rqHeaderCredits"]/div[2]/*')
+            #questions = driver.find_elements_by_xpath('//*[@id="rqHeaderCredits"]/div[2]/*')
+            questions = driver.find_elements_by_xpath('//*[starts-with(@id, "rqQuestionState")]')
             current_progress, complete_progress = 0, len(questions)
             for question in questions:
                 if question.get_attribute("class") == "filledCircle":
@@ -360,7 +361,8 @@ class Rewards:
                 option_index = 0
                 while option_index < quiz_options_len:
                     option = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, "rqAnswerOption{0}".format(option_index))))
-                    if option.get_attribute("class") == "rqOption rqDragOption correctDragAnswer":
+                    #if option.get_attribute("class") == "rqOption rqDragOption correctDragAnswer":
+                    if option.get_attribute("class") == "rqOption rqDragOption correctAnswer":
                         correct_options.append(option_index)
                     option_index += 1
 
@@ -387,8 +389,10 @@ class Rewards:
 
                         if current_progress == complete_progress-1: # last question
                             try:
-                                header = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="quizCompleteContainer"]/span/div[1]')))
-                                if header.text == "Way to go!":
+                                #header = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="quizCompleteContainer"]/span/div[1]')))
+                                header = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="quizCompleteContainer"]/div')))
+                                #if header.text == "Way to go!":
+                                if "great job!" in header.text.lower():
                                     self.__sys_out_progress(complete_progress, complete_progress, 4)
                                     exit_code = 0 # successfully completed
                                     break
@@ -428,8 +432,10 @@ class Rewards:
 
                 if current_progress == complete_progress-1: # last question, works for -1, 0 too (already complete)
                     try:
-                        header = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="quizCompleteContainer"]/span/div[1]')))
-                        if header.text == "Way to go!":
+                        #header = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="quizCompleteContainer"]/span/div[1]')))
+                        header = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="quizCompleteContainer"]/div')))
+                        #if header.text == "Way to go!":
+                        if "great job!" in header.text.lower():
                             if prev_complete_progress > 0:
                                 self.__sys_out_progress(prev_complete_progress, prev_complete_progress, 4)
                                 break
