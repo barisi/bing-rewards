@@ -516,7 +516,8 @@ class Rewards:
 
             if "quiz" in title.lower():
                 completed = self.__quiz(driver)
-            elif "quiz" in details.lower():
+            #elif "quiz" in details.lower():
+            elif title.lower() == "test your smarts":
                 completed = self.__quiz2(driver)
             else:
                 time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
