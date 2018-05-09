@@ -1,4 +1,4 @@
-# bing-rewards
+# Bing Rewards
 An automated solution for earning daily Microsoft Rewards points.
 
 
@@ -61,5 +61,4 @@ Some of these bug fixes may also be roled out in newer builds. You can ensure yo
 
 ## Future Work
 - ~~Utilize Microsoft Edge's web driver to earn additional points.~~ (Solved with user agents!)
-- Create a script to automate scheduling for the user.
 

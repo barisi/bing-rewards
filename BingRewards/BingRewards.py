@@ -169,10 +169,10 @@ def __main(arg0, arg1):
                 elif not completion.is_any_searches_completed():
                     rewards.complete_both_searches()
                 elif not completion.is_web_search_completed() and not completion.is_offers_completed():
-                    rewards.complete_web_search()
-                    rewards.complete_offers()
+                    rewards.complete_web_search_and_offers()
                 elif not completion.is_mobile_search_completed() and not completion.is_offers_completed():
-                    rewards.complete_mobile_search_and_offers()
+                    rewards.complete_mobile_search()
+                    rewards.complete_offers()
                 elif not completion.is_offers_completed():
                     rewards.complete_offers()
                 elif not completion.is_mobile_search_completed():

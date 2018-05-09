@@ -486,6 +486,17 @@ class Rewards:
         self.__sys_out("Successfully completed quiz", 3, True, True)
         return True
 
+    def __poll(self, driver):
+        self.__sys_out("Starting poll", 3)
+
+        try:
+            driver.find_element_by_xpath('//*[@id="OptionText00"]').click() # first option
+            self.__sys_out("Successfully completed poll", 3, True)
+            return True
+        except:
+            self.__sys_out("Failed to complete poll", 3, True)
+            return False
+
     def __handle_alerts(self, driver):
         try:
             driver.switch_to.alert.dismiss()
@@ -519,6 +530,8 @@ class Rewards:
             #elif "quiz" in details.lower():
             elif title.lower() == "test your smarts":
                 completed = self.__quiz2(driver)
+            elif "poll" in title.lower():
+                completed = self.__poll(driver)
             else:
                 time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
             if completed:
@@ -656,11 +669,11 @@ class Rewards:
     def complete_offers(self):
         self.__complete_offers()
     def complete_all(self):
-        self.__complete_web_search()
-        mobile_driver = self.__complete_mobile_search(close=False)
-        self.__complete_offers(mobile_driver)
-    def complete_mobile_search_and_offers(self):
-        mobile_driver = self.__complete_mobile_search(close=False)
-        self.__complete_offers(mobile_driver)
+        web_driver = self.__complete_web_search(close=False)
+        self.__complete_offers(web_driver)
+        self.__complete_mobile_search()
+    def complete_web_search_and_offers(self):
+        web_driver = self.__complete_web_search(close=False)
+        self.__complete_offers(web_driver)
 
 
