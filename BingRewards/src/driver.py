@@ -34,10 +34,7 @@ class Driver:
     __MOBILE_USER_AGENT         = "Mozilla/5.0 (Linux; Android 8.0; Pixel XL Build/OPP3.170518.006) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.0 Mobile Safari/537.36 EdgA/41.1.35.1"
 
 
-    def __init__(self, path, device, headless):
-        self.driver = self.__get_driver(path, device, headless)
-
-    def __download_driver(self, driver_path, system):
+    def __download_driver(driver_path, system):
         # determine latest chromedriver version
         response = urlopen("https://sites.google.com/a/chromium.org/chromedriver/downloads", context=ssl.SSLContext(ssl.PROTOCOL_TLSv1)).read()
         latest_version = max([float("{}.{}".format(version[0].decode(), version[1].decode())) 
@@ -67,39 +64,38 @@ class Driver:
         os.rmdir(extracted_dir)
 
         os.chmod(driver_path, 0o755)
-    def __get_driver(self, path, device, headless):
+    def get_driver(path, device, headless):
         system = platform.system()
         if system == "Windows":
             if not path.endswith(".exe"):
                 path += ".exe"
         if not os.path.exists(path):
-            self.__download_driver(path, system)
+            Driver.__download_driver(path, system)
 
         options = webdriver.ChromeOptions()
         options.add_argument("--disable-extensions")
         options.add_argument("--window-size=1280,1024")
         options.add_argument("--log-level=3")
-        options.add_experimental_option("prefs", {"profile.default_content_setting_values.geolocation" : 2}) # geolocation permission, 0=Ask, 1=Allow, 2=Deny
+        options.add_experimental_option("prefs", {"profile.default_content_setting_values.geolocation" : 1}) # geolocation permission, 0=Ask, 1=Allow, 2=Deny
         if headless:
             options.add_argument("--headless")
         #else:
         #    options.add_argument("--window-position=-2000,0") # doesnt move off screen
         
-        if device == self.WEB_DEVICE:
-            options.add_argument("user-agent=" + self.__WEB_USER_AGENT)
+        if device == Driver.WEB_DEVICE:
+            options.add_argument("user-agent=" + Driver.__WEB_USER_AGENT)
         else:
-            options.add_argument("user-agent=" + self.__MOBILE_USER_AGENT)
+            options.add_argument("user-agent=" + Driver.__MOBILE_USER_AGENT)
         
         driver = webdriver.Chrome(path, chrome_options=options)
         if not headless:
             driver.set_window_position(-2000, 0)
         return driver
-
-    def close(self):
+    def close(driver):
         # close open tabs
-        for handle in self.driver.window_handles:
-            self.driver.switch_to.window(handle)
-            self.driver.close()
+        for handle in driver.window_handles:
+            driver.switch_to.window(handle)
+            driver.close()
 
 class Completion:
     def __init__(self):
@@ -485,7 +481,6 @@ class Rewards:
 
         self.__sys_out("Successfully completed quiz", 3, True, True)
         return True
-
     def __poll(self, driver):
         self.__sys_out("Starting poll", 3)
 
@@ -591,89 +586,122 @@ class Rewards:
 
         return min(completed)
 
-    def __complete_web_search(self, close=True):
+
+    def __complete_web_search(self, close=False):
         self.__sys_out("Starting web search", 1)
 
         try:
-            web_driver = Driver(self.path, Driver.WEB_DEVICE, self.headless)
-            self.__login(web_driver.driver)
+            driver = Driver.get_driver(self.path, Driver.WEB_DEVICE, self.headless)
+            self.__login(driver)
         
-            self.completion.web_search = self.__search(web_driver.driver, Driver.WEB_DEVICE)
+            self.completion.web_search = self.__search(driver, Driver.WEB_DEVICE)
             if self.completion.web_search:
                 self.__sys_out("Successfully completed web search", 1, True)
             else:
                 self.__sys_out("Failed to complete web search", 1, True)
         except:
             try:
-                web_driver.close()
+                Driver.close(driver)
             except: # not yet initialized
                 pass
             raise
 
         if close:
-            web_driver.close()
+            Driver.close(driver)
         else:
-            return web_driver
-    def __complete_mobile_search(self, close=True): 
+            return driver
+    def __complete_mobile_search(self, close=False): 
         self.__sys_out("Starting mobile search", 1)
 
         try:
-            mobile_driver = Driver(self.path, Driver.MOBILE_DEVICE, self.headless)
-            self.__login(mobile_driver.driver)
+            driver = Driver.get_driver(self.path, Driver.MOBILE_DEVICE, self.headless)
+            self.__login(driver)
     
-            self.completion.mobile_search = self.__search(mobile_driver.driver, Driver.MOBILE_DEVICE)
+            self.completion.mobile_search = self.__search(driver, Driver.MOBILE_DEVICE)
             if self.completion.mobile_search:
                 self.__sys_out("Successfully completed mobile search", 1, True)
             else:
                 self.__sys_out("Failed to complete mobile search", 1, True)
         except:
             try:
-                mobile_driver.close()
+                Driver.close(driver)
             except: # not yet initialized
                 pass
             raise
 
         if close:
-            mobile_driver.close()
+            Driver.close(driver)
         else:
-            return mobile_driver
+            return driver
     def __complete_offers(self, driver=None):
         self.__sys_out("Starting offers", 1)
 
         try:
             if not driver:
-                driver = Driver(self.path, Driver.MOBILE_DEVICE, self.headless)
-                self.__login(driver.driver)
+                driver = Driver.get_driver(self.path, Driver.WEB_DEVICE, self.headless)
+                self.__login(driver)
         
-            self.completion.offers = self.__offers(driver.driver)
+            self.completion.offers = self.__offers(driver)
             if self.completion.offers:
                 self.__sys_out("Successfully completed offers", 1, True)
             else:
                 self.__sys_out("Failed to complete offers", 1, True)
-
-            driver.close()
         except:
             try:
-                driver.close()
+                Driver.close(driver)
             except:
                 pass
             raise
 
-    def complete_mobile_search(self): 
-        self.__complete_mobile_search()
-    def complete_web_search(self):
-        self.__complete_web_search()
-    def complete_both_searches(self):
-        self.__complete_web_search()
-        self.__complete_mobile_search()
-    def complete_offers(self):
-        self.__complete_offers()
-    def complete_all(self):
-        web_driver = self.__complete_web_search(close=False)
-        self.__complete_offers(web_driver)
-        self.__complete_mobile_search()
-    def complete_web_search_and_offers(self):
-        web_driver = self.__complete_web_search(close=False)
-        self.__complete_offers(web_driver)
+        return driver
+    def __print_stats(self, driver): 
+        try: 
+            driver.get(self.__DASHBOARD_URL)
+            time.sleep(self.__WEB_DRIVER_WAIT_LONG)
+            stats = driver.find_elements_by_id('$ctrl.id')
+
+            self.__sys_out("Summary", 1, flush=True)
+            self.__sys_out("Points earned: "+stats[4].text.replace(" ", ""), 2)
+            self.__sys_out("Streak count: "+stats[2].text, 2)
+            self.__sys_out(stats[3].text, 2, end=True) # streak details, ex. how many days remaining, bonus earned
+            self.__sys_out("Available points: "+stats[0].text, 2)
+        except Exception as e: 
+            print('    Error checking rewards status - ', e)
+
+    def complete_mobile_search(self, print_stats=True): 
+        driver = self.__complete_mobile_search()
+        if print_stats:
+            self.__print_stats(driver)
+        Driver.close(driver)
+    def complete_web_search(self, print_stats=True):
+        driver = self.__complete_web_search()
+        if print_stats:
+            self.__print_stats(driver)
+        Driver.close(driver)
+    def complete_both_searches(self, print_stats=True):
+        self.__complete_web_search(close=True)
+        driver = self.__complete_mobile_search()
+        if print_stats:
+            self.__print_stats(driver)
+        Driver.close(driver)
+    def complete_offers(self, print_stats=True):
+        driver = self.__complete_offers()
+        if print_stats:
+            self.__print_stats(driver)
+        Driver.close(driver)
+    def complete_all(self, print_stats=True):
+        driver = self.__complete_web_search()
+        self.__complete_offers(driver)
+        Driver.close(driver)
+        driver = self.__complete_mobile_search()
+        if print_stats:
+            self.__print_stats(driver)
+        Driver.close(driver)
+    def complete_web_search_and_offers(self, print_stats=True):
+        driver = self.__complete_web_search()
+        self.__complete_offers(driver)
+        if print_stats:
+            self.__print_stats(driver)
+        Driver.close(driver)
 
 

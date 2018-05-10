@@ -171,7 +171,7 @@ def __main(arg0, arg1):
                 elif not completion.is_web_search_completed() and not completion.is_offers_completed():
                     rewards.complete_web_search_and_offers()
                 elif not completion.is_mobile_search_completed() and not completion.is_offers_completed():
-                    rewards.complete_mobile_search()
+                    rewards.complete_mobile_search(print_stats=False)
                     rewards.complete_offers()
                 elif not completion.is_offers_completed():
                     rewards.complete_offers()
