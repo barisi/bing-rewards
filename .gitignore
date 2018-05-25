@@ -1,6 +1,9 @@
 BingRewards/src/config.py
+BingRewards/src/config.py.*
 BingRewards/drivers/
 run.vbs
+/BingRewards.sln
+/BingRewards/BingRewards.pyproj
 
 
 ## Ignore Visual Studio temporary files, build results, and
