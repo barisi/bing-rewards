@@ -4,9 +4,20 @@ from urllib.request import urlopen
 import ssl
 import zipfile
 from selenium import webdriver
+from selenium.webdriver.support.abstract_event_listener import AbstractEventListener
+from selenium.webdriver.support.event_firing_webdriver import EventFiringWebDriver
 import re
 
 
+
+class EventListener(AbstractEventListener):
+    """Attempt to disable animations"""
+    def after_navigate_to(self, url, driver):
+        animation =\
+        """
+        try { jQuery.fx.off = true; } catch(e) {}
+        """
+        driver.execute_script(animation)
 
 class Driver:
     WEB_DEVICE                  = 0
@@ -73,6 +84,7 @@ class Driver:
         driver = webdriver.Chrome(path, chrome_options=options)
         #if not headless:
         #    driver.set_window_position(-2000, 0)
+        return EventFiringWebDriver(driver, EventListener())
         return driver
     def close(driver):
         # close open tabs

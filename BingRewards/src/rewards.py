@@ -421,7 +421,7 @@ class Rewards:
         time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
 
         try:
-            driver.find_element_by_xpath('//*[@id="OptionText00"]').click() # first option
+            driver.find_element_by_xpath('//*[@id="OptionText0{}"]'.format(random.randint(0, 1))).click() # first option
             self.__sys_out("Successfully completed poll", 3, True)
             return True
         except:
@@ -433,7 +433,7 @@ class Rewards:
             driver.switch_to.alert.dismiss()
         except:
             pass
-    def __click_offer(self, driver, offer, title_xpath, checked_xpath, details_xpath):
+    def __click_offer(self, driver, offer, title_xpath, checked_xpath, details_xpath, link_xpath):
         title = offer.find_element_by_xpath(title_xpath).text
         self.__sys_out("Trying {0}".format(title), 2)
 
@@ -451,7 +451,7 @@ class Rewards:
         if not checked:
             details = offer.find_element_by_xpath(details_xpath).text
 
-            offer.click()
+            offer.find_element_by_xpath(link_xpath).click()
             #driver.execute_script('''window.open("{0}","_blank");'''.format(offer.get_attribute("href")))
             driver.switch_to.window(driver.window_handles[-1])
             #self.__handle_alerts(driver)
@@ -484,7 +484,7 @@ class Rewards:
             #offer = driver.find_element_by_xpath('//*[@id="daily-sets"]/mee-rewards-card-placement[1]/div/div/div[{}]/{}/mee-rewards-daily-sets-item/mee-rewards-card/div/div'.format(1 if i == 0 else 2, 'item{}'.format(i) if i == 0 else 'div[{0}]/item{0}'.format(i)))
             #c = self.__click_offer(driver, offer, './section/div/div[2]/h3', './section/div/div[2]/mee-rewards-points/div/div/span[1]', './section/div/div[2]/p')
             offer = driver.find_element_by_xpath('//*[@id="daily-sets"]/mee-card-group[1]/div/mee-card[{}]/div/card-content/mee-rewards-daily-set-item-content/div'.format(i+1))
-            c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[2]/p')
+            c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[2]/p', './div[3]')
             completed.append(c)
 
         ### more activities
@@ -510,10 +510,12 @@ class Rewards:
         #            pass
         #    i += 1
 
+        # '//*[@id="punch-cards"]/mee-hero-item/section/div/div/div'
+
         for i in range(8):
             try:
                 offer = driver.find_element_by_xpath('//*[@id="more-activities"]/div/mee-card[{}]/div/card-content/mee-rewards-more-activities-card-item/div'.format(i+1))
-                c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[2]/p')
+                c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[2]/p', './div[3]')
                 completed.append(c)
                 i += 1
                 item_num += 1
