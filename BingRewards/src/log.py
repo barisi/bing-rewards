@@ -99,8 +99,11 @@ class HistLog:
             log.write("\n".join(self.__run_hist) + "\n")
 
         if search_hist:
+            for query in search_hist:
+                if query not in self.__search_hist:
+                    self.__search_hist.append(query)
             with open(self.search_path, "w") as log:
-                log.write("\n".join(search_hist) + "\n")
+                log.write("\n".join(self.__search_hist) + "\n")
 
 
 class Completion:

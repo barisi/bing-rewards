@@ -13,6 +13,7 @@ import re
 import random
 from datetime import datetime, timedelta
 import json
+import ssl
 
 
 
@@ -132,7 +133,7 @@ class Rewards:
     def __update_search_queries(self, timestamp, last_request_time):
         if last_request_time:
             time.sleep(max(0, 20-(datetime.now()-last_request_time).total_seconds())) # sleep at least 20 seconds to avoid over requesting server
-        response = urlopen(self.__TRENDS_URL.format(timestamp.strftime("%Y%m%d")))
+        response = urlopen(self.__TRENDS_URL.format(timestamp.strftime("%Y%m%d")), context=ssl.SSLContext(ssl.PROTOCOL_TLSv1))
         last_request_time = datetime.now()
         response = json.loads(response.read()[5:])
 
