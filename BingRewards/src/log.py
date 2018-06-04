@@ -46,10 +46,10 @@ class HistLog:
             last_ran_pst = datetime.strptime(last_ran, self.__DATETIME_FORMAT).replace(tzinfo=self.__LOCAL_TIMEZONE).astimezone(self.__PST_TIMEZONE)
             run_datetime_pst = self.__run_datetime.astimezone(self.__PST_TIMEZONE)
             delta_days = (run_datetime_pst.date()-last_ran_pst.date()).days
+
+            # if already ran today
             if ((delta_days == 0 and last_ran_pst.hour >= self.__RESET_HOUR) or 
                 (delta_days == 1 and run_datetime_pst.hour < self.__RESET_HOUR)):
-                
-                self.__search_hist = []
 
                 if completed == self.__COMPLETED_TRUE:
                     self.__completion.web_search = True
@@ -63,6 +63,8 @@ class HistLog:
                         self.__completion.mobile_search = True
                     if self.__OFFERS_OPTION not in completed:
                         self.__completion.offers = True
+            else:
+                self.__search_hist = []
 
         if not self.__completion.is_all_completed():
             # update hist with todays time stamp

@@ -82,6 +82,7 @@ class Driver:
             options.add_argument("user-agent=" + Driver.__MOBILE_USER_AGENT)
         
         driver = webdriver.Chrome(path, chrome_options=options)
+        driver.set_page_load_timeout(30)
         #if not headless:
         #    driver.set_window_position(-2000, 0)
         return EventFiringWebDriver(driver, EventListener())
