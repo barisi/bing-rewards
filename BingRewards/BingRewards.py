@@ -19,6 +19,7 @@ HEADLESS                   = True
 
 ## TODO
 #
+#  try getting quiz progress only in the beginning to check how many total searches are required instead of every time
 #  
 
 

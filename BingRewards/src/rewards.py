@@ -153,7 +153,7 @@ class Rewards:
         self.__sys_out("Starting search", 2)
         driver.get(self.__BING_URL)    
 
-        trending_date = datetime.now()
+        trending_date = datetime.now() - timedelta(days=random.randint(0, 7))
         last_request_time = None
         if len(self.__queries) == 0:
             last_request_time = self.__update_search_queries(trending_date, last_request_time)
@@ -187,7 +187,7 @@ class Rewards:
                     query = self.__queries[0]
                     self.__queries = self.__queries[1:]
                 else:
-                    trending_date -= timedelta(days=1)
+                    trending_date -= timedelta(days=random.randint(1, 7))
                     last_request_time = self.__update_search_queries(trending_date, last_request_time)
                     try_count_2 += 1
                     if try_count_2 == 4:
@@ -201,7 +201,7 @@ class Rewards:
 
 
             # sleep for a few seconds
-            time.sleep(random.uniform(0, 5))
+            time.sleep(random.uniform(1, 5))
 
         self.__sys_out("Successfully completed search", 2, True, True)
         return True
@@ -233,7 +233,8 @@ class Rewards:
         try:
             try_count = 0
             while True:
-                start_quiz = driver.find_element_by_id('rqStartQuiz')
+                # web driver wait needed to start quiz properly
+                start_quiz = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, 'rqStartQuiz')))
                 if start_quiz.is_displayed():
                     try:
                         start_quiz.click()
@@ -457,14 +458,27 @@ class Rewards:
             #driver.execute_script('''window.open("{0}","_blank");'''.format(offer.get_attribute("href")))
             driver.switch_to.window(driver.window_handles[-1])
 
-            if "quiz" in title.lower():
-                completed = self.__quiz(driver)
-            elif title.lower() == "test your smarts":
+            # is weekly quiz
+            #try:
+            #    driver.find_element_by_id("")
+            #    is_weekly_quiz = True
+            #except:
+            #    is_weekly_quiz = False
+            # is poll
+            try:
+                driver.find_element_by_id("PollPane")
+                is_poll = True
+            except:
+                is_poll = False
+            if title.lower() == "test your smarts":
                 completed = self.__weekly_quiz(driver)
-            elif "poll" in title.lower():
+            elif is_poll:
                 completed = self.__poll(driver)
+            elif "quiz" in title.lower():
+                completed = self.__quiz(driver)
             else:
                 time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
+
             if completed:
                 self.__sys_out("Successfully completed {0}".format(title), 2, True)
             else:

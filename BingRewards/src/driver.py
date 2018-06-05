@@ -17,7 +17,8 @@ class EventListener(AbstractEventListener):
         """
         try { jQuery.fx.off = true; } catch(e) {}
         """
-        driver.execute_script(animation)
+        driver.execute_async_script(animation)
+
 
 class Driver:
     WEB_DEVICE                  = 0
@@ -30,7 +31,7 @@ class Driver:
 
     def __download_driver(driver_path, system):
         # determine latest chromedriver version
-        response = urlopen("https://sites.google.com/a/chromium.org/chromedriver/downloads", context=ssl.SSLContext(ssl.PROTOCOL_TLSv1)).read()
+        response = urlopen("https://sites.google.com/a/chromium.org/chromedriver", context=ssl.SSLContext(ssl.PROTOCOL_TLSv1)).read()
         latest_version = max([float("{}.{}".format(version[0].decode(), version[1].decode())) 
                               for version in re.findall(b"ChromeDriver (\d+).(\d+)", response)])
 
@@ -58,6 +59,7 @@ class Driver:
         os.rmdir(extracted_dir)
 
         os.chmod(driver_path, 0o755)
+        open(os.path.join(os.path.dirname(driver_path), "{}.txt".format(latest_version)), "w").close() # way to note which chromedriver version is installed
     def get_driver(path, device, headless):
         system = platform.system()
         if system == "Windows":

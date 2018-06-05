@@ -100,7 +100,7 @@ class HistLog:
         with open(self.run_path, "w") as log:
             log.write("\n".join(self.__run_hist) + "\n")
 
-        if search_hist:
+        if len(search_hist) > 0:
             for query in search_hist:
                 if query not in self.__search_hist:
                     self.__search_hist.append(query)
