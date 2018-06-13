@@ -32,15 +32,15 @@ class Rewards:
     __SYS_OUT_PROGRESS_BAR_LEN  = 30
 
 
-    def __init__(self, path, email, password, debug=True, headless=True):
+    def __init__(self, path, email, password, search_hist, debug=True, headless=True):
         self.path               = path
         self.email              = email
         self.password           = password
+        self.search_hist        = search_hist # reference to list
         self.debug              = debug
         self.headless           = headless
         self.completion         = Completion()
         self.stdout             = []
-        self.search_hist        = []
         self.__queries          = []
 
     ## std out
@@ -54,11 +54,11 @@ class Rewards:
         if self.debug:
             if flush: # because of progress bar
                 print("")
-            out = "{0}{1}{2}".format(self.__get_sys_out_prefix(lvl, end), msg, "\n" if lvl==1 and end else "")
-            print(out)
-            if len(self.stdout) > 0:
                 if self.stdout[-1].startswith("\r"):
                     self.stdout[-1] = self.stdout[-1][2:]
+
+            out = "{}{}".format(self.__get_sys_out_prefix(lvl, end), msg)
+            print(out + ("\n" if lvl==1 and end else ""))
             self.stdout.append(out)
     def __sys_out_progress(self, current_progress, complete_progress, lvl):
         if self.debug:
@@ -149,62 +149,70 @@ class Rewards:
             for related_topic in topic["relatedQueries"]:
                 self.__queries.append(related_topic["query"].lower())
         return last_request_time
-    def __search(self, driver, device):
-        self.__sys_out("Starting search", 2)
-        driver.get(self.__BING_URL)    
-
-        trending_date = datetime.now() - timedelta(days=random.randint(0, 7))
+    def __search(self, driver, device, try_count=0, trending_date=None):
+        if try_count == 0:
+            self.__sys_out("Starting search", 2)
+            driver.get(self.__BING_URL)
+        elif try_count == 4:
+            self.__sys_out("Failed to complete search", 2, True, True)
+            return False
+            
+        if trending_date is None:
+            trending_date = datetime.now() - timedelta(days=random.randint(0, 7))
         last_request_time = None
         if len(self.__queries) == 0:
             last_request_time = self.__update_search_queries(trending_date, last_request_time)
 
-        prev_progress = -1
-        #try_count = 0
+
+        try_count_2 = 0
         while True:
             current_progress, complete_progress = self.__get_search_progress(driver, device)
             if complete_progress > 0:
+                break
+            try_count_2 += 1
+            if try_count_2 == 4:
+                self.__sys_out("Failed to complete search - no search progress", 2, True, True)
+                return False
+        if current_progress != complete_progress:
+            while True:
                 self.__sys_out_progress(current_progress, complete_progress, 3)
 
-            if current_progress == complete_progress:
-                break
-            #elif current_progress == prev_progress:
-            #    try_count += 1
-            #    if try_count == 4:
-            #        self.__sys_out("Failed to complete search - no search progress", 2, True, True)
-            #        return False
-            else:
-                prev_progress = current_progress
-                try_count = 0
-        
-            search_box = driver.find_element_by_id("sb_form_q")
-            search_box.clear()
+                search_box = driver.find_element_by_id("sb_form_q")
+                search_box.clear()
 
+                # send query
+                try_count_2 = 0
+                while True:
+                    if len(self.__queries) > 0:
+                        query = self.__queries[0]
+                        self.__queries = self.__queries[1:]
+                    else:
+                        trending_date -= timedelta(days=random.randint(1, 7))
+                        last_request_time = self.__update_search_queries(trending_date, last_request_time)
+                        try_count_2 += 1
+                        if try_count_2 == 4:
+                            self.__sys_out("Failed to complete search - no topics to search", 2, True, True)
+                            return False
+                        continue
+                    if query not in self.search_hist:
+                        break
+                search_box.send_keys(query, Keys.RETURN) # unique search term
+                self.search_hist.append(query)
 
-            # send query
-            try_count_2 = 0
-            while True:
-                if len(self.__queries) > 0:
-                    query = self.__queries[0]
-                    self.__queries = self.__queries[1:]
-                else:
-                    trending_date -= timedelta(days=random.randint(1, 7))
-                    last_request_time = self.__update_search_queries(trending_date, last_request_time)
-                    try_count_2 += 1
-                    if try_count_2 == 4:
-                        self.__sys_out("Failed to complete search - no topics to search", 2, True, True)
-                        return False
-                    continue
-                if query not in self.search_hist:
+                # sleep for a few seconds
+                time.sleep(random.uniform(1, 5))
+
+                current_progress += 5
+                if current_progress == complete_progress:
                     break
-            search_box.send_keys(query, Keys.RETURN) # unique search term
-            self.search_hist.append(query)
+        else:
+            self.__sys_out_progress(current_progress, complete_progress, 3)
+            self.__sys_out("Successfully completed search", 2, True, True)
+            return True
 
 
-            # sleep for a few seconds
-            time.sleep(random.uniform(1, 5))
+        return self.__search(driver, device, try_count+1, trending_date)
 
-        self.__sys_out("Successfully completed search", 2, True, True)
-        return True
 
     ## quizzes
     def __get_quiz_progress(self, driver, try_count=0):
@@ -459,18 +467,18 @@ class Rewards:
             driver.switch_to.window(driver.window_handles[-1])
 
             # is weekly quiz
-            #try:
-            #    driver.find_element_by_id("")
-            #    is_weekly_quiz = True
-            #except:
-            #    is_weekly_quiz = False
+            try:
+                driver.find_element_by_id('wkCanvas')
+                is_weekly_quiz = True
+            except:
+                is_weekly_quiz = False
             # is poll
             try:
                 driver.find_element_by_id("PollPane")
                 is_poll = True
             except:
                 is_poll = False
-            if title.lower() == "test your smarts":
+            if is_weekly_quiz:#title.lower() == "test your smarts":
                 completed = self.__weekly_quiz(driver)
             elif is_poll:
                 completed = self.__poll(driver)
@@ -596,20 +604,17 @@ class Rewards:
             self.__sys_out(stats[3].text, 2, end=True)
             self.__sys_out("Available points: "+stats[0].text, 2)
 
-    def complete_mobile_search(self, search_hist, print_stats=True): 
-        self.search_hist = search_hist
+    def complete_mobile_search(self, print_stats=True): 
         driver = self.__complete_mobile_search()
         if print_stats:
             self.__print_stats(driver)
         Driver.close(driver)
-    def complete_web_search(self, search_hist, print_stats=True):
-        self.search_hist = search_hist
+    def complete_web_search(self, print_stats=True):
         driver = self.__complete_web_search()
         if print_stats:
             self.__print_stats(driver)
         Driver.close(driver)
-    def complete_both_searches(self, search_hist, print_stats=True):
-        self.search_hist = search_hist
+    def complete_both_searches(self, print_stats=True):
         self.__complete_web_search(close=True)
         driver = self.__complete_mobile_search()
         if print_stats:
@@ -620,8 +625,7 @@ class Rewards:
         if print_stats:
             self.__print_stats(driver)
         Driver.close(driver)
-    def complete_all(self, search_hist, print_stats=True):
-        self.search_hist = search_hist
+    def complete_all(self, print_stats=True):
         driver = self.__complete_web_search()
         self.__complete_offers(driver)
         Driver.close(driver)
@@ -629,8 +633,7 @@ class Rewards:
         if print_stats:
             self.__print_stats(driver)
         Driver.close(driver)
-    def complete_web_search_and_offers(self, search_hist, print_stats=True):
-        self.search_hist = search_hist
+    def complete_web_search_and_offers(self, print_stats=True):
         driver = self.__complete_web_search()
         self.__complete_offers(driver)
         if print_stats:

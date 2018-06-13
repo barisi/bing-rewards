@@ -1,33 +1,35 @@
 import os
 from datetime import datetime
 from dateutil import tz
+import logging
 
 
 
 class HistLog:
-    __DATETIME_FORMAT      = "%a, %b %d %Y %I:%M%p %Z"
+    __DATETIME_FORMAT           = "%a, %b %d %Y %I:%M%p %Z"
 
-    __LOCAL_TIMEZONE       = tz.tzlocal()
-    __PST_TIMEZONE         = tz.gettz("US/Alaska") # Alaska timezone, guards against Pacific Daylight Savings Time
+    __LOCAL_TIMEZONE            = tz.tzlocal()
+    __PST_TIMEZONE              = tz.gettz("US/Alaska") # Alaska timezone, guards against Pacific Daylight Savings Time
 
-    __RESET_HOUR           = 0  # AM PST
-    __MAX_HIST_LEN         = 30 # days
+    __RESET_HOUR                = 0  # AM PST
+    __MAX_HIST_LEN              = 30 # days
 
-    __COMPLETED_TRUE       = "Successful"
-    __COMPLETED_FALSE      = "Failed {}"
+    __COMPLETED_TRUE            = "Successful"
+    __COMPLETED_FALSE           = "Failed {}"
 
-    __WEB_SEARCH_OPTION    = "Web Search"
-    __MOBILE_SEARCH_OPTION = "Mobile Search"
-    __OFFERS_OPTION        = "Offers"
+    __WEB_SEARCH_OPTION         = "Web Search"
+    __MOBILE_SEARCH_OPTION      = "Mobile Search"
+    __OFFERS_OPTION             = "Offers"
 
 
-    def __init__(self, run_path, search_path, run_datetime=datetime.now()):
-        self.run_path = run_path
-        self.search_path = search_path
-        self.__run_datetime = run_datetime.replace(tzinfo=self.__LOCAL_TIMEZONE)
-        self.__run_hist = self.__read(run_path)
-        self.__search_hist = self.__read(search_path)
-        self.__completion = Completion()
+    def __init__(self, run_path, search_path, error_path, run_datetime=datetime.now()):
+        self.run_path           = run_path
+        self.search_path        = search_path
+        self.error_path         = error_path
+        self.__run_datetime     = run_datetime.replace(tzinfo=self.__LOCAL_TIMEZONE)
+        self.__run_hist         = self.__read(run_path)
+        self.__search_hist      = self.__read(search_path)
+        self.__completion       = self.__get_completion()
 
     def __read(self, path):
         if not os.path.exists(path):
@@ -35,10 +37,13 @@ class HistLog:
         else:
             with open(path, "r") as log:
                 return [line.strip("\n") for line in log.readlines()]
+    def __write(self, path, lines):
+        with open(path, "w") as log:
+            log.write("\n".join(lines) + "\n")
 
-    def get_timestamp(self):
-        return self.__run_datetime.strftime(self.__DATETIME_FORMAT)
-    def get_completion(self):
+    def __get_completion(self):
+        completion = Completion()
+
         # check if already ran today
         if len(self.__run_hist) > 0:
             last_ran, completed = self.__run_hist[-1].split(": ")
@@ -52,30 +57,32 @@ class HistLog:
                 (delta_days == 1 and run_datetime_pst.hour < self.__RESET_HOUR)):
 
                 if completed == self.__COMPLETED_TRUE:
-                    self.__completion.web_search = True
-                    self.__completion.mobile_search = True
-                    self.__completion.offers = True
+                    completion.web_search = True
+                    completion.mobile_search = True
+                    completion.offers = True
                 else:
                     #self.__run_hist.pop()
                     if self.__WEB_SEARCH_OPTION not in completed:
-                        self.__completion.web_search = True
+                        completion.web_search = True
                     if self.__MOBILE_SEARCH_OPTION not in completed:
-                        self.__completion.mobile_search = True
+                        completion.mobile_search = True
                     if self.__OFFERS_OPTION not in completed:
-                        self.__completion.offers = True
+                        completion.offers = True
             else:
                 self.__search_hist = []
 
-        if not self.__completion.is_all_completed():
-            # update hist with todays time stamp
-            self.__run_hist.append(self.get_timestamp())
-            if len(self.__run_hist) == self.__MAX_HIST_LEN:
-                self.__run_hist = self.__run_hist[1:]
+        return completion
 
+
+    def get_completion(self):
         return self.__completion
     def get_search_hist(self):
         return self.__search_hist
-    def write(self, completion, search_hist):
+
+    def log_completion(self, completion):
+        if self.__completion.is_all_completed():
+            return
+
         self.__completion.update(completion)
         if not self.__completion.is_all_completed():
             if not self.__completion.is_any_completed():
@@ -96,16 +103,32 @@ class HistLog:
         else:
             msg = self.__COMPLETED_TRUE
 
-        self.__run_hist[-1] = "{}: {}".format(self.__run_hist[-1], msg)
-        with open(self.run_path, "w") as log:
-            log.write("\n".join(self.__run_hist) + "\n")
+        self.__run_hist.append("{}: {}".format(self.__run_datetime.strftime(self.__DATETIME_FORMAT), msg))
+        if len(self.__run_hist) == self.__MAX_HIST_LEN:
+            self.__run_hist = self.__run_hist[1:]
+        self.__write(self.run_path, self.__run_hist)
 
-        if len(search_hist) > 0:
-            for query in search_hist:
-                if query not in self.__search_hist:
-                    self.__search_hist.append(query)
-            with open(self.search_path, "w") as log:
-                log.write("\n".join(self.__search_hist) + "\n")
+
+        ## log search history
+        self.__write(self.search_path, self.__search_hist)
+    def log_exception(self, stdout):
+        logging.basicConfig(level=logging.DEBUG, 
+                            format='%(asctime)s %(levelname)-8s %(message)s', 
+                            datefmt=self.__DATETIME_FORMAT, 
+                            filename=self.error_path)
+        out = "\n"
+        if len(stdout) > 0:
+            out += "\n".join(stdout) + "\n"
+        logging.exception(out)
+    def log_warning(self, stdout):
+        logging.basicConfig(level=logging.DEBUG, 
+                            format='%(asctime)s %(levelname)-8s %(message)s', 
+                            datefmt=self.__DATETIME_FORMAT, 
+                            filename=self.error_path)
+        out = "\n"
+        if len(stdout) > 0:
+            out += "\n".join(stdout) + "\n"
+        logging.warn(out)
 
 
 class Completion:

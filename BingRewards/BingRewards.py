@@ -34,87 +34,75 @@ def __main(arg0, arg1):
 
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
-    hist_log = HistLog(os.path.join(LOG_DIR, RUN_LOG), os.path.join(LOG_DIR, SEARCH_LOG))
+    hist_log = HistLog(os.path.join(LOG_DIR, RUN_LOG), os.path.join(LOG_DIR, SEARCH_LOG), os.path.join(LOG_DIR, ERROR_LOG))
 
     # get credentials
     try:
         from src import config
     except:
-        print("\nFailed to import configuration file")
-        logging.basicConfig(level=logging.DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
-        logging.exception(hist_log.get_timestamp())
-        logging.debug("")
+        out = "Failed to import configuration file"
+        print("\n{}".format(out))
+        hist_log.log_exception([out])
         raise
 
     if not os.path.exists(DRIVERS_DIR):
         os.mkdir(DRIVERS_DIR)
-    rewards = Rewards(os.path.join(DRIVERS_DIR, DRIVER), config.credentials["email"], config.credentials["password"], DEBUG, HEADLESS)
+    rewards = Rewards(os.path.join(DRIVERS_DIR, DRIVER), config.credentials["email"], config.credentials["password"], hist_log.get_search_hist(), DEBUG, HEADLESS)
 
 
-    if arg1 in ["w", "web"]:
-        print("\n\t{}\n".format("You selected web search"))
-        rewards.complete_web_search(hist_log.get_search_hist())
-        if not hist_log.get_completion().is_web_search_completed():
-            hist_log.write(rewards.completion, rewards.search_hist)
-    elif arg1 in ["m", "mobile"]:
-        print("\n\t{}\n".format("You selected mobile search"))
-        rewards.complete_mobile_search(hist_log.get_search_hist())
-        if not hist_log.get_completion().is_mobile_search_completed():
-            hist_log.write(rewards.completion, rewards.search_hist)
-    elif arg1 in ["b", "both"]:
-        print("\n\t{}\n".format("You selected both searches"))
-        rewards.complete_both_searches(hist_log.get_search_hist())
-        if not hist_log.get_completion().is_both_searches_completed():
-            hist_log.write(rewards.completion, rewards.search_hist)
-    elif arg1 in ["o", "other"]:
-        print("\n\t{}\n".format("You selected offers"))
-        rewards.complete_offers()
-        if not hist_log.get_completion().is_offers_completed():
-            hist_log.write(rewards.completion, rewards.search_hist)
-    elif arg1 in ["a", "all"]:
-        print("\n\t{}\n".format("You selected all"))
-        rewards.complete_all(hist_log.get_search_hist())
-        if not hist_log.get_completion().is_all_completed():
-            hist_log.write(rewards.completion, rewards.search_hist)
-    else:
-        print("\n\t{}\n".format("You selected remianing"))
-        try:
+    try:
+        if arg1 in ["w", "web"]:
+            print("\n\t{}\n".format("You selected web search"))
+            rewards.complete_web_search()
+            hist_log.log_completion(rewards.completion)
+        elif arg1 in ["m", "mobile"]:
+            print("\n\t{}\n".format("You selected mobile search"))
+            rewards.complete_mobile_search()
+            hist_log.log_completion(rewards.completion)
+        elif arg1 in ["b", "both"]:
+            print("\n\t{}\n".format("You selected both searches"))
+            rewards.complete_both_searches()
+            hist_log.log_completion(rewards.completion)
+        elif arg1 in ["o", "other"]:
+            print("\n\t{}\n".format("You selected offers"))
+            rewards.complete_offers()
+            hist_log.log_completion(rewards.completion)
+        elif arg1 in ["a", "all"]:
+            print("\n\t{}\n".format("You selected all"))
+            rewards.complete_all()
+            hist_log.log_completion(rewards.completion)
+        else:
+            print("\n\t{}\n".format("You selected remianing"))
             completion = hist_log.get_completion()
             if not completion.is_all_completed():
                 if not completion.is_any_completed():
-                    rewards.complete_all(hist_log.get_search_hist())
+                    rewards.complete_all()
                 elif not completion.is_any_searches_completed():
-                    rewards.complete_both_searches(hist_log.get_search_hist())
+                    rewards.complete_both_searches()
                 elif not completion.is_web_search_completed() and not completion.is_offers_completed():
-                    rewards.complete_web_search_and_offers(hist_log.get_search_hist())
+                    rewards.complete_web_search_and_offers()
                 elif not completion.is_mobile_search_completed() and not completion.is_offers_completed():
-                    rewards.complete_mobile_search(hist_log.get_search_hist(), print_stats=False)
+                    rewards.complete_mobile_search(print_stats=False)
                     rewards.complete_offers()
                 elif not completion.is_offers_completed():
                     rewards.complete_offers()
                 elif not completion.is_mobile_search_completed():
-                    rewards.complete_mobile_search(hist_log.get_search_hist())
+                    rewards.complete_mobile_search()
                 else:
-                    rewards.complete_web_search(hist_log.get_search_hist())
-                hist_log.write(rewards.completion, rewards.search_hist)
+                    rewards.complete_web_search()
 
+                hist_log.log_completion(rewards.completion)
                 completion = hist_log.get_completion()
                 if not completion.is_all_completed(): # check again, log if any failed
-                    logging.basicConfig(level=logging.DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
-                    logging.debug(hist_log.get_timestamp())
-                    for line in rewards.stdout:
-                        logging.debug(line)
-                    logging.debug("")
+                    hist_log.log_warning(rewards.stdout)
 
             else:
                 print("Nothing to do")
-        except:
-            logging.basicConfig(level=logging.DEBUG, format='%(message)s', filename=os.path.join(LOG_DIR, ERROR_LOG))
-            logging.exception(hist_log.get_timestamp())
-            logging.debug("")
 
-            hist_log.write(rewards.completion, rewards.search_hist)
-            raise
+    except:
+        hist_log.log_completion(rewards.completion)
+        hist_log.log_exception(rewards.stdout)
+        raise
     
 
 if __name__ == "__main__":

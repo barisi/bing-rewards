@@ -1,4 +1,4 @@
-# Bing Rewards
+# Bing Rewards *__(Deprecating on June 25, 2018)__*
 An automated solution for earning daily Microsoft Rewards points.
 
 
