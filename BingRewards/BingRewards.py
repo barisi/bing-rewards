@@ -74,7 +74,7 @@ def __main(arg0, arg1):
             rewards.complete_all()
             hist_log.log_completion(rewards.completion)
         else:
-            print("\n\t{}\n".format("You selected remianing"))
+            print("\n\t{}\n".format("You selected remaining"))
             completion = hist_log.get_completion()
             if not completion.is_all_completed():
                 if not completion.is_any_completed():
