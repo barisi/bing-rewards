@@ -596,12 +596,12 @@ class Rewards:
             stats = driver.find_elements_by_id('$ctrl.id')
 
             self.__sys_out("Summary", 1, flush=True)
-            self.__sys_out("Points earned: "+stats[3].text.replace(" ", ""), 2)
+            self.__sys_out("Points earned: "+stats[4].text.replace(" ", ""), 2)
             self.__sys_out("Streak count: "+stats[1].text, 2)
-            self.__sys_out(stats[2].text, 2, end=True) # streak details, ex. how many days remaining, bonus earned
+            self.__sys_out(stats[3].text, 2, end=True) # streak details, ex. how many days remaining, bonus earned
             self.__sys_out("Available points: "+stats[0].text, 2)
         except Exception as e: 
-            self.__sys_out("Points earned: "+stats[3].text.replace(" ", ""), 2)
+            self.__sys_out("Points earned: "+stats[4].text.replace(" ", ""), 2)
             self.__sys_out("Streak count: "+stats[1].text, 2)
             self.__sys_out(stats[3].text, 2, end=True)
             self.__sys_out("Available points: "+stats[0].text, 2)
