@@ -102,9 +102,9 @@ class Rewards:
         if device == Driver.WEB_DEVICE:
             web_progress_elements = [None, None]
             for element in progress_elements:
-                progress_name = element.find_element_by_xpath('/html[@class=\'ltr rewards-oneuidashboard rewards js picture eventlistener\']/body/div[@id=\'modal-host\']/div[2]/div[@class=\'ng-scope\']/mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']/div[@id=\'userPointsBreakdown\']').text.lower()
+                progress_name = element.find_element_by_xpath('//body//div[@id=\'modal-host\']//div[@role=\'dialog\']//div[@class=\'ng-scope\']//mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']//div[@id=\'userPointsBreakdown\']//div//div//div[2]//div[1]//div[2]//mee-rewards-user-points-details[1]//div[1]//div[1]//div[1]//div[1]//p[1]').text.lower()
                 if "pc" in progress_name or ("daily" in progress_name and "activities" not in progress_name):
-                    web_progress_elements[0] = element.find_element_by_xpath('/html[@class=\'ltr rewards-oneuidashboard rewards js picture eventlistener\']/body/div[@id=\'modal-host\']/div[2]/div[@class=\'ng-scope\']/mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']/div[@id=\'userPointsBreakdown\']/div/div[2]/div[@class=\'margin-bottom-18 ng-scope\'][2]/div[@class=\'pointsCountersContainer\']/div[@class=\'pointsDetail\']/mee-rewards-user-points-details[@class=\'ng-isolate-scope\']/div[@class=\'content\']/div[@class=\'body-outer\']/div[@class=\'body-inner\']/div[@class=\'title-detail\']/p[@class=\'pointsDetail c-subheading-3 ng-binding\']/b').text
+                    web_progress_elements[0] = element.find_element_by_xpath('//body//div[@id=\'modal-host\']//div[@role=\'dialog\']//div[@class=\'ng-scope\']//mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']//div[@id=\'userPointsBreakdown\']//div//div//div[2]//div[1]//div[2]//mee-rewards-user-points-details[1]//div[1]//div[1]//div[1]//div[1]//p[2]/b').text
                 elif "bonus" in progress_name:
                     web_progress_elements[1] = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]').text
 
