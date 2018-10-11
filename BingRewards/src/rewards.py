@@ -123,9 +123,9 @@ class Rewards:
         else:
             mobile_progress_element = None
             for element in progress_elements:
-                progress_name = element.find_element_by_xpath('/html[@class=\'ltr rewards-oneuidashboard rewards js picture eventlistener\']/body/div[@id=\'modal-host\']/div[2]/div[@class=\'ng-scope\']/mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']/div[@id=\'userPointsBreakdown\']/div/div[2]/div[@class=\'margin-bottom-18 ng-scope\'][3]').text.lower()
+                progress_name = element.find_element_by_xpath('//body//div[@id=\'modal-host\']//div[@role=\'dialog\']//div[@class=\'ng-scope\']//mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']//div[@id=\'userPointsBreakdown\']//div//div//div[3]//div[1]//div[2]//mee-rewards-user-points-details[1]//div[1]//div[1]//div[1]//div[1]//p[1]').text.lower()
                 if "mobile" in progress_name or ("daily" in progress_name and "activities" not in progress_name):
-                    mobile_progress_element = element.find_element_by_xpath('/html[@class=\'ltr rewards-oneuidashboard rewards js picture eventlistener\']/body/div[@id=\'modal-host\']/div[2]/div[@class=\'ng-scope\']/mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']/div[@id=\'userPointsBreakdown\']/div/div[2]/div[@class=\'margin-bottom-18 ng-scope\'][3]/div[@class=\'pointsCountersContainer\']/div[@class=\'pointsDetail\']/mee-rewards-user-points-details[@class=\'ng-isolate-scope\']/div[@class=\'content\']/div[@class=\'body-outer\']/div[@class=\'body-inner\']/div[@class=\'title-detail\']/p[@class=\'pointsDetail c-subheading-3 ng-binding\']/b').text
+                    mobile_progress_element = element.find_element_by_xpath('//body//div[@id=\'modal-host\']//div[@role=\'dialog\']//div[@class=\'ng-scope\']//mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']//div[@id=\'userPointsBreakdown\']//div//div//div[3]//div[1]//div[2]//mee-rewards-user-points-details[1]//div[1]//div[1]//div[1]//div[1]//p[2]/b').text
                     break
 
             if mobile_progress_element:
@@ -593,14 +593,14 @@ class Rewards:
         try: 
             driver.get(self.__DASHBOARD_URL)
             time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
-            stats = driver.find_elements_by_id('$ctrl.id')
+            stats = driver.find_elements_by_xpath('//mee-rewards-counter-animation//span')
 
             self.__sys_out("Summary", 1, flush=True)
-            self.__sys_out("Points earned: "+stats[5].text.replace(" ", ""), 2)
-            self.__sys_out("Streak count: "+stats[3].text, 2)
-            self.__sys_out(stats[4].text, 2, end=True) # streak details, ex. how many days remaining, bonus earned
-            self.__sys_out("Available points: "+stats[1].text, 2)
-            self.__sys_out("Lifetime points: "+stats[2].text, 2)
+            self.__sys_out("Points earned: "+stats[4].text, 2)
+            self.__sys_out("Streak count: "+stats[2].text, 2)
+            self.__sys_out(stats[3].text, 2, end=True) # streak details, ex. how many days remaining, bonus earned
+            self.__sys_out("Available points: "+stats[0].text, 2)
+            self.__sys_out("Lifetime points: "+stats[1].text, 2)
         except Exception as e: 
             self.__sys_out("Points earned: "+stats[4].text.replace(" ", ""), 2)
             self.__sys_out("Streak count: "+stats[2].text, 2)
