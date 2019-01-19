@@ -105,8 +105,14 @@ class Rewards:
                 progress_name = element.find_element_by_xpath('//body//div[@id=\'modal-host\']//div[@role=\'dialog\']//div[@class=\'ng-scope\']//mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']//div[@id=\'userPointsBreakdown\']//div//div//div[2]//div[1]//div[2]//mee-rewards-user-points-details[1]//div[1]//div[1]//div[1]//div[1]//p[1]').text.lower()
                 if "pc" in progress_name or ("daily" in progress_name and "activities" not in progress_name):
                     web_progress_elements[0] = element.find_element_by_xpath('//body//div[@id=\'modal-host\']//div[@role=\'dialog\']//div[@class=\'ng-scope\']//mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']//div[@id=\'userPointsBreakdown\']//div//div//div[2]//div[1]//div[2]//mee-rewards-user-points-details[1]//div[1]//div[1]//div[1]//div[1]//p[2]/b').text
+
+                    complete_web_progress_element = element.find_element_by_xpath('//body//div[@id=\'modal-host\']//div[@role=\'dialog\']//div[@class=\'ng-scope\']//mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']//div[@id=\'userPointsBreakdown\']//div//div//div[1]//div[1]//div[2]//mee-rewards-user-points-details[1]//div[1]//div[1]//div[1]//div[1]//p[2]').text.split(" ")[2]
+                    
                 elif "bonus" in progress_name:
                     web_progress_elements[1] = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]').text
+                
+                else:
+                    web_progress_elements[0] = '0'
 
             if web_progress_elements[0]:
                 current_progress = int(web_progress_elements[0])
@@ -123,14 +129,15 @@ class Rewards:
         else:
             mobile_progress_element = None
             for element in progress_elements:
-                progress_name = element.find_element_by_xpath('//body//div[@id=\'modal-host\']//div[@role=\'dialog\']//div[@class=\'ng-scope\']//mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']//div[@id=\'userPointsBreakdown\']//div//div//div[3]//div[1]//div[2]//mee-rewards-user-points-details[1]//div[1]//div[1]//div[1]//div[1]//p[1]').text.lower()
+                progress_name = element.find_element_by_xpath('//body//div[@id=\'modal-host\']//div[@role=\'dialog\']//div[@class=\'ng-scope\']//mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']//div[@id=\'userPointsBreakdown\']//div//div[2]//div[@class=\'margin-bottom-18 ng-scope\'][3]//div[@class=\'pointsCountersContainer\']//div[@class=\'pointsDetail\']//mee-rewards-user-points-details[@class=\'ng-isolate-scope\']//div[@class=\'content\']//div[@class=\'body-outer\']//div[@class=\'body-inner\']//div[@class=\'title-detail\']').text.lower()
                 if "mobile" in progress_name or ("daily" in progress_name and "activities" not in progress_name):
-                    mobile_progress_element = element.find_element_by_xpath('//body//div[@id=\'modal-host\']//div[@role=\'dialog\']//div[@class=\'ng-scope\']//mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']//div[@id=\'userPointsBreakdown\']//div//div//div[3]//div[1]//div[2]//mee-rewards-user-points-details[1]//div[1]//div[1]//div[1]//div[1]//p[2]/b').text
+                    mobile_progress_element = element.find_element_by_xpath('//body//div[@id=\'modal-host\']//div[@role=\'dialog\']//div[@class=\'ng-scope\']//mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']//div[@id=\'userPointsBreakdown\']//div//div[2]//div[@class=\'margin-bottom-18 ng-scope\'][3]//div[@class=\'pointsCountersContainer\']//div[@class=\'pointsDetail\']//mee-rewards-user-points-details[@class=\'ng-isolate-scope\']//div[@class=\'content\']//div[@class=\'body-outer\']//div[@class=\'body-inner\']//div[@class=\'title-detail\']//p[@class=\'pointsDetail c-subheading-3 ng-binding\']//b').text
+                    complete_mobile_progress_element = element.find_element_by_xpath('//body//div[@id=\'modal-host\']//div[@role=\'dialog\']//div[@class=\'ng-scope\']//mee-rewards-points-breakdown[@class=\'ng-scope ng-isolate-scope\']//div[@id=\'userPointsBreakdown\']//div//div[2]//div[@class=\'margin-bottom-18 ng-scope\'][3]//div[@class=\'pointsCountersContainer\']//div[@class=\'pointsDetail\']//mee-rewards-user-points-details[@class=\'ng-isolate-scope\']//div[@class=\'content\']//div[@class=\'body-outer\']//div[@class=\'body-inner\']//div[@class=\'title-detail\']//p[@class=\'pointsDetail c-subheading-3 ng-binding\']').text.split(" ")[2]
                     break
 
             if mobile_progress_element:
                 current_progress = int(mobile_progress_element)
-                complete_progress = 60
+                complete_progress = int(complete_mobile_progress_element)
 
             else:
                 current_progress, complete_progress = 0, -1
