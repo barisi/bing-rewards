@@ -25,9 +25,13 @@ class Driver:
     MOBILE_DEVICE               = 1
 
     # Microsoft Edge user agents for additional points
-    __WEB_USER_AGENT            = "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.10240"
+    # __WEB_USER_AGENT            = "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.10240"
     #__MOBILE_USER_AGENT         = "Mozilla/5.0 (Linux; Android 8.0; Pixel XL Build/OPP3.170518.006) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.0 Mobile Safari/537.36 EdgA/41.1.35.1"
-    __MOBILE_USER_AGENT         = "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_2 like Mac OS X) AppleWebKit/603.2.4 (KHTML, like Gecko) Mobile/14F89 Safari/603.2.4 EdgiOS/41.1.35.1"
+    # __MOBILE_USER_AGENT         = "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_2 like Mac OS X) AppleWebKit/603.2.4 (KHTML, like Gecko) Mobile/14F89 Safari/603.2.4 EdgiOS/41.1.35.1"
+    # __WEB_USER_AGENT            = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.48 Safari/537.36 Edg/74.1.96.24"
+    __WEB_USER_AGENT            = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.48 Safari/537.36 Edg/74.1.96.24"
+    # __MOBILE_USER_AGENT         = "Mozilla/5.0 (Linux; Android 7.1.1; Moto G Play) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.83 Mobile Safari/537.36"
+    __MOBILE_USER_AGENT         = "Mozilla/5.0 (Linux; Android 9; ONEPLUS A6013 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.48 Mobile Safari/537.36 Edg/42.0.2.3438"
 
 
     def __download_driver(driver_path, system):
@@ -71,6 +75,8 @@ class Driver:
 
         options = webdriver.ChromeOptions()
         options.add_argument("--disable-extensions")
+        # options.add_argument("--no-sandbox")
+        options.add_argument("--dns-prefetch-disable")
         options.add_argument("--window-size=1280,1024")
         options.add_argument("--log-level=3")
         options.add_experimental_option("prefs", {"profile.default_content_setting_values.geolocation" : 1}) # geolocation permission, 0=Ask, 1=Allow, 2=Deny
@@ -85,11 +91,12 @@ class Driver:
             options.add_argument("user-agent=" + Driver.__MOBILE_USER_AGENT)
         
         driver = webdriver.Chrome(path, chrome_options=options)
-        driver.set_page_load_timeout(30)
+        driver.set_page_load_timeout(60)
         #if not headless:
         #    driver.set_window_position(-2000, 0)
         return EventFiringWebDriver(driver, EventListener())
         return driver
+
     def close(driver):
         # close open tabs
         for handle in driver.window_handles:

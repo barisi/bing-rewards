@@ -25,8 +25,8 @@ class Rewards:
     __POINTS_URL                = "https://account.microsoft.com/rewards/pointsbreakdown"
     __TRENDS_URL                = "https://trends.google.com/trends/api/dailytrends?hl=en-US&ed={}&geo=US&ns=15"
 
-    __WEB_DRIVER_WAIT_LONG      = 15
-    __WEB_DRIVER_WAIT_SHORT     = 5
+    __WEB_DRIVER_WAIT_LONG      = 35
+    __WEB_DRIVER_WAIT_SHORT     = 25
 
     __SYS_OUT_TAB_LEN           = 8
     __SYS_OUT_PROGRESS_BAR_LEN  = 30
@@ -95,8 +95,8 @@ class Rewards:
         try:
             driver.get(self.__POINTS_URL)
         except TimeoutException: # https://stackoverflow.com/questions/40514022/chrome-webdriver-produces-timeout-in-selenium
-            driver.refresh()
-        progress_elements = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_all_elements_located((By.XPATH, '//div[@id=\'userPointsBreakdown\']/div[@class=\'center\']/div[2]/div[@class=\'cardContainer\']/div[@class=\'pointsBreakdownCard ng-scope\'][*]/div[@class=\'border\']')))[1:]
+            driver.navigate().refresh()
+        progress_elements = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_SHORT).until(EC.visibility_of_all_elements_located((By.XPATH, '//div[@class=\'center\']//div//div[@class=\'cardContainer\']//div[@class=\'pointsBreakdownCard ng-scope\']//div//div[@class=\'pointsDetail\']//div[@class=\'title-detail\']')))[1:]
 
 
         if device == Driver.WEB_DEVICE:
@@ -129,9 +129,9 @@ class Rewards:
         else:
             mobile_progress_element = None
             for element in progress_elements:
-                progress_name = element.find_element_by_xpath('/html[@class=\'ltr rewards-oneuidashboard rewards js picture eventlistener\']/body/div[@id=\'modal-host\']/div[2]/div[@class=\'ng-scope\']/mee-rewards-earning-report-points-breakdown[@class=\'ng-scope ng-isolate-scope\']/div[@id=\'userPointsBreakdown\']/div[@class=\'center\']/div[2]/div[@class=\'cardContainer\']/div[@class=\'pointsBreakdownCard ng-scope\'][3]/div[@class=\'border\']').text.lower()
+                progress_name = element.find_element_by_xpath('//a[@id=\'pointsCounters_mobileSearch_0\']').text.lower()
                 if "mobile" in progress_name or ("daily" in progress_name and "activities" not in progress_name):
-                    mobile_progress_element = element.find_element_by_xpath('/html[@class=\'ltr rewards-oneuidashboard rewards js picture eventlistener\']/body/div[@id=\'modal-host\']/div[2]/div[@class=\'ng-scope\']/mee-rewards-earning-report-points-breakdown[@class=\'ng-scope ng-isolate-scope\']/div[@id=\'userPointsBreakdown\']/div[@class=\'center\']/div[2]/div[@class=\'cardContainer\']/div[@class=\'pointsBreakdownCard ng-scope\'][3]/div[@class=\'border\']/div[@class=\'pointsDetail\']/mee-rewards-user-points-details[@class=\'ng-isolate-scope\']/div[@class=\'content\']/div[@class=\'body-outer\']/div[@class=\'body-inner\']/div[@class=\'title-detail\']/p[@class=\'pointsDetail c-subheading-3 ng-binding\']/b').text
+                    mobile_progress_element = element.find_element_by_xpath('//p[@class=\'pointsDetail c-subheading-3 ng-binding\'][contains(text(),\'/ 60\')]//b').text
                     complete_mobile_progress_element = element.find_element_by_xpath('/html[@class=\'ltr rewards-oneuidashboard rewards js picture eventlistener\']/body/div[@id=\'modal-host\']/div[2]/div[@class=\'ng-scope\']/mee-rewards-earning-report-points-breakdown[@class=\'ng-scope ng-isolate-scope\']/div[@id=\'userPointsBreakdown\']/div[@class=\'center\']/div[2]/div[@class=\'cardContainer\']/div[@class=\'pointsBreakdownCard ng-scope\'][3]/div[@class=\'border\']/div[@class=\'pointsDetail\']/mee-rewards-user-points-details[@class=\'ng-isolate-scope\']/div[@class=\'content\']/div[@class=\'body-outer\']/div[@class=\'body-inner\']/div[@class=\'title-detail\']/p[@class=\'pointsDetail c-subheading-3 ng-binding\']').text.split(" ")[2]
                     break
 
@@ -209,7 +209,7 @@ class Rewards:
                 self.search_hist.append(query)
 
                 # sleep for a few seconds
-                time.sleep(random.uniform(1, 5))
+                time.sleep(random.uniform(3, 10))
 
                 current_progress += 3
                 if current_progress == complete_progress:
@@ -242,7 +242,7 @@ class Rewards:
                 return 0, -1
     def __start_quiz(self, driver):
         try:
-            WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, 'btOverlay')))
+            WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, 'quizWelcomeContainer')))
         except:
             self.__sys_out("Failed to start quiz - could not detect quiz overlay", 3, True)
             return False
@@ -330,6 +330,15 @@ class Rewards:
                     if option.get_attribute("class") == "rqOption rqDragOption correctAnswer":
                         correct_options.append(option_index)
                     option_index += 1
+                    try:
+                        option = WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.visibility_of_element_located((By.ID, "rqAnswerOption{0}".format(option_index))))
+                        #if option.get_attribute("class") == "rqOption rqDragOption correctDragAnswer":
+                        if option.get_attribute("class") == "rqOption rqDragOption correctAnswer":
+                            correct_options.append(option_index)
+                        option_index += 1
+                    except TimeoutException: 
+                        self.__sys_out("Time out Exception", 3)
+                        return False
             
 
                 exit_code = -1 # no choices were swapped
@@ -463,7 +472,7 @@ class Rewards:
         checked = False
         try:
             icon = offer.find_element_by_xpath(checked_xpath)
-            if icon.get_attribute('class').startswith("mee-icon mee-icon-SkypeCircleCheck ng-scope"):
+            if icon.get_attribute('class').startswith("mee-icon mee-icon-SkypeCircleCheck"):
                 checked = True
                 self.__sys_out("Already checked", 2, True)
         except:
