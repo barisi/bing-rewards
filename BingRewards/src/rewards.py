@@ -106,7 +106,7 @@ class Rewards:
                 if "pc" in progress_name or ("daily" in progress_name and "activities" not in progress_name):
                     web_progress_elements[0] = element.find_element_by_xpath('//*[@id="userPointsBreakdown"]/div/div[2]/div/div[1]/div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]/b').text
 
-                    complete_web_progress_element = element.find_element_by_xpath('/html[@class=\'ltr rewards-oneuidashboard rewards js picture eventlistener\']/body/div[@id=\'modal-host\']/div[2]/div[@class=\'ng-scope\']/mee-rewards-earning-report-points-breakdown[@class=\'ng-scope ng-isolate-scope\']/div[@id=\'userPointsBreakdown\']/div[@class=\'center\']/div[2]/div[@class=\'cardContainer\']/div[@class=\'pointsBreakdownCard ng-scope\'][2]/div[@class=\'border\']/div[@class=\'pointsDetail\']/mee-rewards-user-points-details[@class=\'ng-isolate-scope\']/div[@class=\'content\']/div[@class=\'body-outer\']/div[@class=\'body-inner\']/div[@class=\'title-detail\']/p[@class=\'pointsDetail c-subheading-3 ng-binding\']').text.split(" ")[2]
+                    complete_web_progress_element = element.find_element_by_xpath('//*[@id="userPointsBreakdown"]/div/div[2]/div/div[1]/div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]').text.split(" ")[2]
                     
                 elif "bonus" in progress_name:
                     web_progress_elements[1] = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]').text
@@ -116,7 +116,7 @@ class Rewards:
 
             if web_progress_elements[0]:
                 current_progress = int(web_progress_elements[0])
-                complete_progress = 90
+                complete_progress = int(complete_web_progress_element)
 
                 # get bonus points 
                 if web_progress_elements[1]:
@@ -132,7 +132,7 @@ class Rewards:
                 progress_name = element.find_element_by_xpath('//a[@id=\'pointsCounters_mobileSearch_0\']').text.lower()
                 if "mobile" in progress_name or ("daily" in progress_name and "activities" not in progress_name):
                     mobile_progress_element = element.find_element_by_xpath('//p[@class=\'pointsDetail c-subheading-3 ng-binding\'][contains(text(),\'/ 60\')]//b').text
-                    complete_mobile_progress_element = element.find_element_by_xpath('/html[@class=\'ltr rewards-oneuidashboard rewards js picture eventlistener\']/body/div[@id=\'modal-host\']/div[2]/div[@class=\'ng-scope\']/mee-rewards-earning-report-points-breakdown[@class=\'ng-scope ng-isolate-scope\']/div[@id=\'userPointsBreakdown\']/div[@class=\'center\']/div[2]/div[@class=\'cardContainer\']/div[@class=\'pointsBreakdownCard ng-scope\'][3]/div[@class=\'border\']/div[@class=\'pointsDetail\']/mee-rewards-user-points-details[@class=\'ng-isolate-scope\']/div[@class=\'content\']/div[@class=\'body-outer\']/div[@class=\'body-inner\']/div[@class=\'title-detail\']/p[@class=\'pointsDetail c-subheading-3 ng-binding\']').text.split(" ")[2]
+                    complete_mobile_progress_element = element.find_element_by_xpath('//*[@id="userPointsBreakdown"]/div/div[2]/div/div[2]/div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]').text.split(" ")[2]
                     break
 
             if mobile_progress_element:
