@@ -77,6 +77,7 @@ class Driver:
         options.add_argument("--disable-extensions")
         # options.add_argument("--no-sandbox")
         options.add_argument("--disable-geolocation")
+        options.add_argument("--disable-notifications")
         options.add_argument("--dns-prefetch-disable")
         options.add_argument("--window-size=1280,1024")
         options.add_argument("--log-level=3")
