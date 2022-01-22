@@ -102,14 +102,14 @@ class Rewards:
         if device == Driver.WEB_DEVICE:
             web_progress_elements = [None, None]
             for element in progress_elements:
-                progress_name = element.find_element_by_xpath('//a[@id=\'pointsCounters_pcSearchLevel2_0\']').text.lower()
+                progress_name = element.find_element(By.XPATH, '//a[@id=\'pointsCounters_pcSearchLevel2_0\']').text.lower()
                 if "pc" in progress_name or ("daily" in progress_name and "activities" not in progress_name):
-                    web_progress_elements[0] = element.find_element_by_xpath('//*[@id="userPointsBreakdown"]/div/div[2]/div/div[1]/div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]/b').text
+                    web_progress_elements[0] = element.find_element(By.XPATH, '//*[@id="userPointsBreakdown"]/div/div[2]/div/div[1]/div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]/b').text
 
-                    complete_web_progress_element = element.find_element_by_xpath('//*[@id="userPointsBreakdown"]/div/div[2]/div/div[1]/div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]').text.split(" ")[2]
+                    complete_web_progress_element = element.find_element(By.XPATH, '//*[@id="userPointsBreakdown"]/div/div[2]/div/div[1]/div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]').text.split(" ")[2]
                     
                 elif "bonus" in progress_name:
-                    web_progress_elements[1] = element.find_element_by_xpath('./div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]').text
+                    web_progress_elements[1] = element.find_element(By.XPATH, './div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]').text
                 
                 else:
                     web_progress_elements[0] = '0'
@@ -129,10 +129,10 @@ class Rewards:
         else:
             mobile_progress_element = None
             for element in progress_elements:
-                progress_name = element.find_element_by_xpath('//a[@id=\'pointsCounters_mobileSearch_0\']').text.lower()
+                progress_name = element.find_element(By.XPATH, '//a[@id=\'pointsCounters_mobileSearch_0\']').text.lower()
                 if "mobile" in progress_name or ("daily" in progress_name and "activities" not in progress_name):
-                    mobile_progress_element = element.find_element_by_xpath('//p[@class=\'pointsDetail c-subheading-3 ng-binding\'][contains(text(),\'/ 60\')]//b').text
-                    complete_mobile_progress_element = element.find_element_by_xpath('//*[@id="userPointsBreakdown"]/div/div[2]/div/div[2]/div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]').text.split(" ")[2]
+                    mobile_progress_element = element.find_element(By.XPATH, '//p[@class=\'pointsDetail c-subheading-3 ng-binding\'][contains(text(),\'/ 60\')]//b').text
+                    complete_mobile_progress_element = element.find_element(By.XPATH, '//*[@id="userPointsBreakdown"]/div/div[2]/div/div[2]/div/div[2]/mee-rewards-user-points-details/div/div/div/div/p[2]').text.split(" ")[2]
                     break
 
             if mobile_progress_element:
@@ -186,7 +186,7 @@ class Rewards:
             while True:
                 self.__sys_out_progress(current_progress, complete_progress, 3)
 
-                search_box = driver.find_element_by_id("sb_form_q")
+                search_box = driver.find_element(By.ID, "sb_form_q")
                 search_box.clear()
 
                 # send query
@@ -226,8 +226,8 @@ class Rewards:
     ## quizzes
     def __get_quiz_progress(self, driver, try_count=0):
         try:
-            #questions = driver.find_elements_by_xpath('//*[@id="rqHeaderCredits"]/div[2]/*')
-            questions = driver.find_elements_by_xpath('//*[starts-with(@id, "rqQuestionState")]')
+            #questions = driver.find_elements(By.XPATH, '//*[@id="rqHeaderCredits"]/div[2]/*')
+            questions = driver.find_elements(By.XPATH, '//*[starts-with(@id, "rqQuestionState")]')
             current_progress, complete_progress = 0, len(questions)
             for question in questions:
                 if question.get_attribute("class") == "filledCircle":
@@ -259,7 +259,7 @@ class Rewards:
                         driver.refresh()
                 else:
                     try:
-                        if driver.find_element_by_id("quizWelcomeContainer").get_attribute("style") == "display: none;": # started
+                        if driver.find_element(By.ID, "quizWelcomeContainer").get_attribute("style") == "display: none;": # started
                             self.__sys_out("Successfully started quiz", 3, True)
                             break
                     except: 
@@ -439,7 +439,7 @@ class Rewards:
                 current_progress, complete_progress = [int(x) for x in re.match("\((\d+) of (\d+)\)", progress).groups()]
                 self.__sys_out_progress(current_progress-1, complete_progress, 4)
 
-                driver.find_element_by_xpath('//*[@id="QuestionPane{}"]/div[1]/div[2]/div[1]'.format(current_progress-1)).click() # correct answer not required
+                driver.find_element(By.XPATH, '//*[@id="QuestionPane{}"]/div[1]/div[2]/div[1]'.format(current_progress-1)).click() # correct answer not required
                 WebDriverWait(driver, self.__WEB_DRIVER_WAIT_LONG).until(EC.element_to_be_clickable((By.ID, "check"))).click()
 
                 if current_progress == complete_progress:
@@ -456,7 +456,7 @@ class Rewards:
         time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
 
         try:
-            driver.find_element_by_xpath('//*[@id="OptionText0{}"]'.format(random.randint(0, 1))).click()
+            driver.find_element(By.XPATH, '//*[@id="OptionText0{}"]'.format(random.randint(0, 1))).click()
             self.__sys_out("Successfully completed poll", 3, True)
             return True
         except:
@@ -465,13 +465,13 @@ class Rewards:
 
     ## offers
     def __click_offer(self, driver, offer, title_xpath, checked_xpath, link_xpath):
-        title = offer.find_element_by_xpath(title_xpath).text
+        title = offer.find_element(By.XPATH, title_xpath).text
         self.__sys_out("Trying {0}".format(title), 2)
 
         # check whether it was already completed
         checked = False
         try:
-            icon = offer.find_element_by_xpath(checked_xpath)
+            icon = offer.find_element(By.XPATH, checked_xpath)
             if icon.get_attribute('class').startswith("mee-icon mee-icon-SkypeCircleCheck"):
                 checked = True
                 self.__sys_out("Already checked", 2, True)
@@ -480,19 +480,19 @@ class Rewards:
 
         completed = True
         if not checked:
-            offer.find_element_by_xpath(link_xpath).click()
+            offer.find_element(By.XPATH, link_xpath).click()
             #driver.execute_script('''window.open("{0}","_blank");'''.format(offer.get_attribute("href")))
             driver.switch_to.window(driver.window_handles[-1])
 
             # is weekly quiz
             try:
-                driver.find_element_by_id('wkCanvas')
+                driver.find_element(By.ID, 'wkCanvas')
                 is_weekly_quiz = True
             except:
                 is_weekly_quiz = False
             # is poll
             try:
-                driver.find_element_by_id("PollPane")
+                driver.find_element(By.ID, "PollPane")
                 is_poll = True
             except:
                 is_poll = False
@@ -519,9 +519,9 @@ class Rewards:
         
         completed = []
         ## daily set
-        sets = driver.find_elements_by_xpath('//*[@id="daily-sets"]/mee-card-group[1]/div/*')
+        sets = driver.find_elements(By.XPATH, '//*[@id="daily-sets"]/mee-card-group[1]/div/*')
         for set_ in sets:
-            offer = set_.find_element_by_xpath('.//div/card-content/mee-rewards-daily-set-item-content/div')
+            offer = set_.find_element(By.XPATH, './/div/card-content/mee-rewards-daily-set-item-content/div')
             c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[3]')
             completed.append(c)
 
@@ -529,9 +529,9 @@ class Rewards:
         # '//*[@id="punch-cards"]/mee-hero-item/section/div/div/div'
 
         ## more activities
-        activities = driver.find_elements_by_xpath('//*[@id="more-activities"]/div/*')
+        activities = driver.find_elements(By.XPATH, '//*[@id="more-activities"]/div/*')
         for activity in activities:
-            offer = activity.find_element_by_xpath('./div/card-content/mee-rewards-more-activities-card-item/div')
+            offer = activity.find_element(By.XPATH, './div/card-content/mee-rewards-more-activities-card-item/div')
             c = self.__click_offer(driver, offer, './div[2]/h3', './mee-rewards-points/div/div/span[1]', './div[3]')
             completed.append(c)
 
@@ -609,7 +609,7 @@ class Rewards:
         try: 
             driver.get(self.__DASHBOARD_URL)
             time.sleep(self.__WEB_DRIVER_WAIT_SHORT)
-            stats = driver.find_elements_by_xpath('//mee-rewards-counter-animation//span')
+            stats = driver.find_elements(By.XPATH, '//mee-rewards-counter-animation//span')
 
             self.__sys_out("Summary", 1, flush=True)
             self.__sys_out("Points earned: "+stats[4].text.replace("/", "of"), 2)
