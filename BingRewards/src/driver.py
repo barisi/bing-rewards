@@ -36,14 +36,14 @@ class Driver:
 
     def __download_driver(driver_path, system):
         # determine latest chromedriver version
-        response = urlopen("https://sites.google.com/a/chromium.org/chromedriver", context=ssl.SSLContext(ssl.PROTOCOL_TLSv1)).read()
-        latest_version = max([float("{}.{}".format(version[0].decode(), version[1].decode())) 
-                              for version in re.findall(b"ChromeDriver (\d+).(\d+)", response)])
+        response = urlopen("https://sites.google.com/chromium.org/driver/downloads", context=ssl.SSLContext(ssl.PROTOCOL_TLSv1)).read()
+        all_versions = re.findall(b"ChromeDriver (\d+).(\d+).(\d+).(\d+)", response)
+        latest_version = "{}.{}.{}.{}".format(all_versions[1][0].decode(), all_versions[1][1].decode(), all_versions[1][2].decode(), all_versions[1][3].decode()) 
 
         if system == "Windows":
             url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_win32.zip".format(latest_version)
         elif system == "Darwin":
-            url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_mac64.zip".format(latest_version)
+            url = "https://chromedriver.storage.googleapis.com/{}/chromedriver_mac64_m1.zip".format(latest_version)
 
         response = urlopen(url, context=ssl.SSLContext(ssl.PROTOCOL_TLSv1)) # context args for mac
         zip_file_path = os.path.join(os.path.dirname(driver_path), os.path.basename(url))
